@@ -2604,7 +2604,25 @@ function api(action, payload = {}) {
     return Promise.reject(new Error('SCRIPT_URL no configurada. Editá la constante en el HTML.'));
   }
 
+  const isRead = CACHEABLE.includes(action) && Object.keys(payload).length === 0;
+
+  // ── Cache-first: si hay datos en cache, devolver inmediatamente ─
+  if (isRead) {
+    const cached = cacheGet(action);
+    if (cached !== null) {
+      // Actualizar cache en background sin bloquear
+      _fetchFromAPI(action, payload).catch(() => {});
+      return Promise.resolve(cached);
+    }
+  }
+
+  return _fetchFromAPI(action, payload);
+}
+
+function _fetchFromAPI(action, payload = {}) {
   const params = new URLSearchParams({ action, payload: JSON.stringify(payload) });
+  const isRead = CACHEABLE.includes(action) && Object.keys(payload).length === 0;
+
   return fetch(`${SCRIPT_URL}?${params}`, { redirect: 'follow' })
     .then(r => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -2614,24 +2632,33 @@ function api(action, payload = {}) {
       if (!result || !result.ok) {
         const msg = (result && result.error) ? result.error : 'Error desconocido';
         console.error('API error:', action, msg);
-        toast(msg, 'err');
         throw new Error(msg);
       }
-      console.log('API OK:', action, result.data);
+      console.log('API OK:', action);
       // Guardar en cache si es una lectura
-      if (CACHEABLE.includes(action) && Object.keys(payload).length === 0) {
+      if (isRead) {
         cacheSet(action, result.data);
       }
       // Invalidar cache si es una escritura y recargar página
       if (WRITE_INVALIDATIONS[action]) {
         WRITE_INVALIDATIONS[action].forEach(k => localStorage.removeItem(CV_CACHE_PREFIX + k));
         state.loaded.clear();
-        // Recargar la página actual en background (sin bloquear el toast de éxito)
         setTimeout(() => loadPage(state.currentPage), 300);
       }
       return result.data;
     })
     .catch(err => {
+      // Si falla la red, intentar devolver cache aunque esté vencido
+      if (isRead) {
+        try {
+          const raw = localStorage.getItem(CV_CACHE_PREFIX + action);
+          if (raw) {
+            const { data } = JSON.parse(raw);
+            console.warn('API falló, usando cache vencido para:', action);
+            return data;
+          }
+        } catch(e) {}
+      }
       toast(err.message || 'Error de red', 'err');
       throw err;
     });
@@ -2687,11 +2714,11 @@ async function init() {
 
   // ── Sin cache → fetch normal (primera vez) ─────────────────
   try {
+    // Intentar ping, pero si falla (acción no reconocida), continuar igual
     const ping = await api('ping').catch(() => null);
     if (!ping || ping.status !== 'ok') {
-      toast('No se pudo conectar con el backend. Revisá el deploy.', 'err');
-      document.getElementById('app-loader').classList.add('hidden');
-      return;
+      // No bloquear — puede que la versión deployada no tenga ping, pero sí las demás acciones
+      console.warn('ping falló, intentando igual con getConfig...');
     }
 
     const cfg = await api('getConfig').catch(() => ({}));
@@ -2927,7 +2954,15 @@ async function loadPage(page) {
     config: loadConfig,
     showroom: loadShowroom,
   };
-  if (loaders[page]) await loaders[page]();
+  if (loaders[page]) {
+    try {
+      await loaders[page]();
+    } catch(err) {
+      // Si la carga falla, quitar de loaded para poder reintentar
+      state.loaded.delete(page);
+      console.error('Error cargando sección', page, err);
+    }
+  }
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────
@@ -3203,15 +3238,15 @@ async function cambiarEstadoTarea(id, nuevoEstado) {
 
 // ─── VENTAS ───────────────────────────────────────────────────
 async function loadVentas() {
-  const [ventas, productos, variantes] = await Promise.all([
+  const [r0, r1, r2] = await Promise.allSettled([
     api('getVentas'),
     api('getProductos'),
     api('getVariantes')
   ]);
 
-  state.ventas    = ventas    || [];
-  state.productos = productos || [];
-  state.variantes = variantes || [];
+  state.ventas    = (r0.status === 'fulfilled' ? r0.value : null) || [];
+  state.productos = (r1.status === 'fulfilled' ? r1.value : null) || [];
+  state.variantes = (r2.status === 'fulfilled' ? r2.value : null) || [];
 
   poblarMesesVentas();
   renderVentasTable();
@@ -3452,12 +3487,12 @@ function limpiarFiltrosVentas() {
 
 // ─── STOCK ────────────────────────────────────────────────────
 async function loadStock() {
-  const [stock, variantes] = await Promise.all([
+  const [r0, r1] = await Promise.allSettled([
     api('getStock'),
     api('getVariantes')
   ]);
-  state.stock     = stock;
-  state.variantes = variantes;
+  state.stock     = (r0.status === 'fulfilled' ? r0.value : null) || [];
+  state.variantes = (r1.status === 'fulfilled' ? r1.value : null) || [];
 
   const capsulas = state.capsulas;
   const filtDiv  = document.getElementById('filters-stock');
@@ -3598,7 +3633,7 @@ async function loadCapsulas() {
 
 // ─── COSTEO ───────────────────────────────────────────────────
 async function loadCosteo() {
-  const [productos, cotizaciones, cueros, insumos, stock] = await Promise.all([
+  const [r0, r1, r2, r3, r4] = await Promise.allSettled([
     api('getProductos'),
     api('getCotizaciones'),
     api('getLotesCuero'),
@@ -3606,11 +3641,11 @@ async function loadCosteo() {
     api('getStock')
   ]);
 
-  state.productos    = productos    || [];
-  state.cotizaciones = cotizaciones || [];
-  state.cueros       = cueros       || [];
-  state.insumos      = insumos      || [];
-  state.stock        = stock        || [];
+  state.productos    = (r0.status === 'fulfilled' ? r0.value : null) || [];
+  state.cotizaciones = (r1.status === 'fulfilled' ? r1.value : null) || [];
+  state.cueros       = (r2.status === 'fulfilled' ? r2.value : null) || [];
+  state.insumos      = (r3.status === 'fulfilled' ? r3.value : null) || [];
+  state.stock        = (r4.status === 'fulfilled' ? r4.value : null) || [];
 
   const selLote = document.getElementById('costeo-lote-cuero');
   selLote.innerHTML =
@@ -4147,19 +4182,20 @@ function renderCotizaciones(cots) {
 
 // ─── PRODUCCIÓN ───────────────────────────────────────────────
 async function loadProduccion() {
-  const [historial, agrupada, prods, variantes] = await Promise.all([
+  const [r0, r1, r2, r3] = await Promise.allSettled([
     api('getProduccion'),
     api('getProduccionAgrupada'),
     api('getProductos'),
     api('getVariantes')
   ]);
 
-  state.produccion = historial || [];
-  state.produccionAgrupada = (agrupada || []).filter(c =>
+  state.produccion = (r0.status === 'fulfilled' ? r0.value : null) || [];
+  const agrupada = (r1.status === 'fulfilled' ? r1.value : null) || [];
+  state.produccionAgrupada = agrupada.filter(c =>
     state.capsulas.some(capActiva => sameCapsula(capActiva, c.capsula))
   );
-  state.productos  = prods     || [];
-  state.variantes  = variantes || [];
+  state.productos  = (r2.status === 'fulfilled' ? r2.value : null) || [];
+  state.variantes  = (r3.status === 'fulfilled' ? r3.value : null) || [];
 
   const sel = document.getElementById('p-producto');
   sel.innerHTML = '<option value="">Seleccionar...</option>' + state.productos.map(p =>
@@ -4565,9 +4601,9 @@ async function loadCueros() {
 
 // ─── COMPRAS ──────────────────────────────────────────────────
 async function loadCompras() {
-  const [compras, insumos] = await Promise.all([api('getCompras'), api('getInsumos')]);
-  state.compras = compras;
-  state.insumos = insumos;
+  const [r0, r1] = await Promise.allSettled([api('getCompras'), api('getInsumos')]);
+  state.compras = (r0.status === 'fulfilled' ? r0.value : null) || [];
+  state.insumos = (r1.status === 'fulfilled' ? r1.value : null) || [];
   const sel = document.getElementById('c-insumo');
   sel.innerHTML = '<option value="">Seleccionar...</option>' + insumos.map(i =>
     `<option value="${i.id_insumo}" data-unit="${i.unidad}" data-cat="${i.categoria}">${i.nombre_insumo} (${i.unidad})</option>`
@@ -5738,15 +5774,15 @@ function makeSearchable(selectId, opciones, config) {
 
 // ─── SHOWROOM ────────────────────────────────────────────────
 async function loadShowroom() {
-  const [showroomData, productos, stock] = await Promise.all([
+  const [r0, r1, r2] = await Promise.allSettled([
     api('getShowroom'),
     api('getProductos'),
     api('getStock')
   ]);
 
-  state.showroom = showroomData;
-  state.productos = productos || [];
-  state.stock = stock || [];
+  state.showroom = (r0.status === 'fulfilled' ? r0.value : null);
+  state.productos = (r1.status === 'fulfilled' ? r1.value : null) || [];
+  state.stock = (r2.status === 'fulfilled' ? r2.value : null) || [];
 
   // Poblar selects de modales
   const opcionesProductos = (state.productos || [])
