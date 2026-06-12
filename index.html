@@ -2794,6 +2794,17 @@ async function init() {
     return;
   }
 
+  // ── Setup de navegación SIEMPRE (antes de cualquier return) ─
+  setupNav();
+  setupTareasTabs();
+  try {
+    document.getElementById('cf-tipo-asignacion')
+      .addEventListener('change', function() {
+        const group = document.getElementById('cf-capsula-group');
+        group.style.display = this.value === 'Cápsula' ? 'block' : 'none';
+      });
+  } catch(e) {}
+
   // ── Intento cargar desde cache (instantáneo) ──────────────
   const cachedConfig = cacheGet('getConfig');
   const cachedCaps   = cacheGet('getCapsulas');
@@ -2858,19 +2869,6 @@ async function init() {
   setTimeout(() => {
     document.getElementById('app-loader').classList.add('hidden');
   }, 400);
-
-  setupNav();
-  setupTareasTabs();
-
-  try {
-    document.getElementById('cf-tipo-asignacion')
-      .addEventListener('change', function() {
-        const group = document.getElementById('cf-capsula-group');
-        group.style.display = this.value === 'Cápsula' ? 'block' : 'none';
-      });
-  } catch(e) {
-    console.warn('cf-tipo-asignacion listener error:', e);
-  }
 }
 
 function populateGlobalSelects() {
