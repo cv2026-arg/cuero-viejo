@@ -129,6 +129,8 @@ body{
 #main{
   margin-left:240px;flex:1;
   display:flex;flex-direction:column;min-height:100vh;
+  min-width:0; /* evita que desborde el flexbox padre */
+  overflow-x:hidden;
 }
 
 #topbar{
@@ -1173,6 +1175,41 @@ function pwaDismiss() {
               </tr>
             </thead>
             <tbody id="ventas-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ FINANZAS ══════════════════════ -->
+    <div class="page" id="page-finanzas">
+      <div class="kpi-grid" id="fin-kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px"></div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Resultados por mes</span>
+        </div>
+        <div class="table-wrap">
+          <table id="fin-table">
+            <thead>
+              <tr>
+                <th>Mes</th><th>Ventas</th><th>Egresos</th><th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="fin-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-header">
+          <span class="panel-title">Resultado por cápsula</span>
+        </div>
+        <div class="table-wrap">
+          <table id="fin-cap-table">
+            <thead>
+              <tr>
+                <th>Cápsula</th><th>Ventas</th><th>Egresos</th><th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="fin-cap-body"></tbody>
           </table>
         </div>
       </div>
@@ -3162,6 +3199,7 @@ async function loadPage(page) {
     sets: loadSets,
     config: loadConfig,
     showroom: loadShowroom,
+    finanzas: loadFinanzas,
   };
   if (loaders[page]) {
     try {
@@ -3696,6 +3734,67 @@ function limpiarFiltrosVentas() {
   renderVentasTable();
 }
 
+
+// ─── FINANZAS ─────────────────────────────────────────────────
+async function loadFinanzas() {
+  const r = await api('getFinanzas');
+  const d = r || {};
+
+  // KPIs
+  const kpiEl = document.getElementById('fin-kpis');
+  const res = (d.beneficio || 0);
+  const resColor = res >= 0 ? 'var(--verde,#4caf50)' : '#e53935';
+  kpiEl.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Ventas</div>
+      <div class="kpi-value">${fmt(d.totalVentas||0)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Egresos</div>
+      <div class="kpi-value">${fmt(d.totalEgresos||0)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Resultado neto</div>
+      <div class="kpi-value" style="color:${resColor}">${fmt(res)}</div>
+    </div>`;
+
+  // Timeline mensual
+  const timeline = Array.isArray(d.timeline) ? d.timeline : [];
+  const tbody = document.getElementById('fin-body');
+  if (!timeline.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  } else {
+    tbody.innerHTML = [...timeline].reverse().map(m => {
+      const r = m.resultado;
+      const color = r >= 0 ? 'var(--verde,#4caf50)' : '#e53935';
+      return `<tr>
+        <td>${m.mes}</td>
+        <td>${fmt(m.ventas)}</td>
+        <td>${fmt(m.egresos)}</td>
+        <td style="color:${color};font-weight:600">${fmt(r)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Por cápsula
+  const caps = d.porCapsula || {};
+  const capBody = document.getElementById('fin-cap-body');
+  const capEntries = Object.entries(caps).sort((a,b) => (b[1].ventas - b[1].egresos) - (a[1].ventas - a[1].egresos));
+  if (!capEntries.length) {
+    capBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Sin datos</td></tr>';
+  } else {
+    capBody.innerHTML = capEntries.map(([cap, v]) => {
+      const r = v.ventas - v.egresos;
+      const color = r >= 0 ? 'var(--verde,#4caf50)' : '#e53935';
+      return `<tr>
+        <td>${cap}</td>
+        <td>${fmt(v.ventas)}</td>
+        <td>${fmt(v.egresos)}</td>
+        <td style="color:${color};font-weight:600">${fmt(r)}</td>
+      </tr>`;
+    }).join('');
+  }
+}
 
 // ─── STOCK ────────────────────────────────────────────────────
 async function loadStock() {
