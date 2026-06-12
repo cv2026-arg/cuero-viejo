@@ -2309,6 +2309,34 @@ const state = {
 // 👉 Pegá aquí la URL de tu deploy de Apps Script después de publicar
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrAXEmruTder_43R2Pw1TfVW4-l8TEYqpwhXKG_1Ms45DXOPs1KcbY2hDRhtiuYzln/exec';
 
+// ─── CACHE (localStorage) ─────────────────────────────────────
+const CV_CACHE_PREFIX = 'cv2_';
+const CV_CACHE_TTL    = 4 * 60 * 60 * 1000; // 4 horas
+
+function cacheSet(key, data) {
+  try { localStorage.setItem(CV_CACHE_PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(CV_CACHE_PREFIX + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CV_CACHE_TTL) return null;
+    return data;
+  } catch(e) { return null; }
+}
+function cacheClear() {
+  Object.keys(localStorage).filter(k => k.startsWith(CV_CACHE_PREFIX)).forEach(k => localStorage.removeItem(k));
+}
+
+// Claves que se cachean (solo lecturas)
+const CACHEABLE = ['getConfig','getCapsulas','getCategorias','getUnidades','getTiposProducto',
+  'getVehiculos','getVariantes','getProductos','getDashboard','getVentas','getStock',
+  'getInsumos','getCompras','getLotesCuero','getEgresos','getViajes','getActivos',
+  'getCostosFijos','getProduccion','getProduccionAgrupada','getCotizaciones','getTareas',
+  'getSets','getKPIs','getMovimientos','getFinanzas','getShowroom','getShowroomKPIs',
+  'getShowroomHistorial','getProductosConVariantes','getSocios'];
+
 // ─── API (fetch → Apps Script) ────────────────────────────────
 function api(action, payload = {}) {
   // Modo legacy: si corre dentro de Apps Script, usar google.script.run
@@ -2351,6 +2379,10 @@ function api(action, payload = {}) {
         throw new Error(msg);
       }
       console.log('API OK:', action, result.data);
+      // Guardar en cache si es una acción cacheable
+      if (CACHEABLE.includes(action) && Object.keys(payload).length === 0) {
+        cacheSet(action, result.data);
+      }
       return result.data;
     })
     .catch(err => {
@@ -2383,41 +2415,60 @@ async function init() {
     return;
   }
 
+  // ── Intento cargar desde cache (instantáneo) ──────────────
+  const cachedConfig = cacheGet('getConfig');
+  const cachedCaps   = cacheGet('getCapsulas');
+
+  if (cachedCaps !== null) {
+    // Tenemos cache → mostrar UI de inmediato
+    state.config        = cachedConfig || {};
+    state.capsulas      = cacheGet('getCapsulas')      || [];
+    state.categorias    = cacheGet('getCategorias')    || [];
+    state.unidades      = cacheGet('getUnidades')      || [];
+    state.tiposProducto = cacheGet('getTiposProducto') || [];
+    state.vehiculos     = cacheGet('getVehiculos')     || [];
+    state.variantes     = cacheGet('getVariantes')     || [];
+    state.productos     = cacheGet('getProductos')     || [];
+
+    populateGlobalSelects();
+    document.getElementById('app-loader').classList.add('hidden');
+    await loadPage('dashboard').catch(e => console.warn('Dashboard load error:', e));
+
+    // Actualizar en background silenciosamente
+    syncAll(true);
+    return;
+  }
+
+  // ── Sin cache → fetch normal (primera vez) ─────────────────
   try {
-    let pingOk = false;
-    try {
-      const ping = await api('ping');
-      pingOk = ping && ping.status === 'ok';
-      console.log('Ping OK:', ping);
-    } catch(pingErr) {
-      console.error('Ping failed:', pingErr);
+    const ping = await api('ping').catch(() => null);
+    if (!ping || ping.status !== 'ok') {
       toast('No se pudo conectar con el backend. Revisá el deploy.', 'err');
       document.getElementById('app-loader').classList.add('hidden');
       return;
     }
 
-    const cfg = await api('getConfig').catch(e => { console.warn('getConfig failed:', e); return {}; });
+    const cfg = await api('getConfig').catch(() => ({}));
     state.config = cfg || {};
 
     const [caps, cats, units, tipos, vehs, vars, prods] = await Promise.all([
-  api('getCapsulas').catch(() => []),
-  api('getCategorias').catch(() => []),
-  api('getUnidades').catch(() => []),
-  api('getTiposProducto').catch(() => []),
-  api('getVehiculos').catch(() => []),
-  api('getVariantes').catch(() => []),
-  api('getProductos').catch(() => []),
-]);
-state.capsulas      = Array.isArray(caps)  ? caps  : [];
-state.categorias    = Array.isArray(cats)  ? cats  : [];
-state.unidades      = Array.isArray(units) ? units : [];
-state.tiposProducto = Array.isArray(tipos) ? tipos : [];
-state.vehiculos     = Array.isArray(vehs)  ? vehs  : [];
-state.variantes     = Array.isArray(vars)  ? vars  : [];
-state.productos     = Array.isArray(prods) ? prods : [];
+      api('getCapsulas').catch(() => []),
+      api('getCategorias').catch(() => []),
+      api('getUnidades').catch(() => []),
+      api('getTiposProducto').catch(() => []),
+      api('getVehiculos').catch(() => []),
+      api('getVariantes').catch(() => []),
+      api('getProductos').catch(() => []),
+    ]);
+    state.capsulas      = Array.isArray(caps)  ? caps  : [];
+    state.categorias    = Array.isArray(cats)  ? cats  : [];
+    state.unidades      = Array.isArray(units) ? units : [];
+    state.tiposProducto = Array.isArray(tipos) ? tipos : [];
+    state.vehiculos     = Array.isArray(vehs)  ? vehs  : [];
+    state.variantes     = Array.isArray(vars)  ? vars  : [];
+    state.productos     = Array.isArray(prods) ? prods : [];
 
     populateGlobalSelects();
-
     await loadPage('dashboard').catch(e => console.warn('Dashboard load error:', e));
 
   } catch(e) {
@@ -5287,16 +5338,50 @@ function toggleSidebar() {
   sidebar.classList.toggle('open');
 }
 
-async function syncAll() {
+async function syncAll(silent = false) {
   const btn = document.getElementById('sync-btn');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Sincronizando...';
+  if (!silent) {
+    btn.classList.add('loading');
+    btn.textContent = '↻ Sincronizando...';
+  }
+
+  // Limpiar cache para forzar datos frescos
+  cacheClear();
   state.loaded.clear();
+
+  // Recargar datos base en paralelo
+  try {
+    const [cfg, caps, cats, units, tipos, vehs, vars, prods] = await Promise.all([
+      api('getConfig').catch(() => ({})),
+      api('getCapsulas').catch(() => []),
+      api('getCategorias').catch(() => []),
+      api('getUnidades').catch(() => []),
+      api('getTiposProducto').catch(() => []),
+      api('getVehiculos').catch(() => []),
+      api('getVariantes').catch(() => []),
+      api('getProductos').catch(() => []),
+    ]);
+    state.config        = cfg  || {};
+    state.capsulas      = Array.isArray(caps)  ? caps  : [];
+    state.categorias    = Array.isArray(cats)  ? cats  : [];
+    state.unidades      = Array.isArray(units) ? units : [];
+    state.tiposProducto = Array.isArray(tipos) ? tipos : [];
+    state.vehiculos     = Array.isArray(vehs)  ? vehs  : [];
+    state.variantes     = Array.isArray(vars)  ? vars  : [];
+    state.productos     = Array.isArray(prods) ? prods : [];
+    populateGlobalSelects();
+  } catch(e) {
+    console.warn('syncAll base error:', e);
+  }
+
   await loadPage(state.currentPage);
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Sincronizar';
+
+  if (!silent) {
+    btn.classList.remove('loading');
+    btn.textContent = '↻ Sincronizar';
+    toast('Datos actualizados ✓');
+  }
   document.getElementById('last-sync').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-  toast('Datos actualizados ✓');
 }
 
 
