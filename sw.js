@@ -1,6 +1,6 @@
 // ── Cuero Viejo Service Worker ───────────────────────────────
-const CACHE_NAME  = 'cuero-viejo-v1';
-const DATA_CACHE  = 'cuero-viejo-data-v1';
+const CACHE_NAME  = 'cuero-viejo-v3';
+const DATA_CACHE  = 'cuero-viejo-data-v3';
 
 // Recursos de la shell de la app (se cachean en la instalación)
 const SHELL_URLS = [
@@ -47,7 +47,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Shell de la app: cache-first
+  // index.html: siempre network-first para recibir actualizaciones
+  if (url.pathname.endsWith('/') || url.pathname.endsWith('index.html')) {
+    event.respondWith(networkFirstShell(event.request));
+    return;
+  }
+
+  // Resto de la shell: cache-first
   event.respondWith(cacheFirst(event.request));
 });
 
@@ -73,6 +79,19 @@ async function networkFirstData(request) {
       JSON.stringify({ ok: false, error: 'Sin conexión. Mostrando datos guardados.' }),
       { headers: { 'Content-Type': 'application/json' } }
     );
+  }
+}
+
+// ── Estrategia: network-first para HTML (siempre actualizado) ─
+async function networkFirstShell(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    const cached = await cache.match(request);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
