@@ -3060,6 +3060,16 @@ const NAV_GROUPS = {
 const DRAWER_GROUPS = ['gastos','tareas','kpis','sets','config'];
 
 function updateGroupTabs(page) {
+  const tabBar   = document.getElementById('group-tabs');
+  const mainEl   = document.getElementById('main');
+
+  // Solo en mobile: en desktop los tabs NUNCA deben mostrarse
+  if (window.innerWidth >= 481) {
+    tabBar.classList.remove('visible');
+    mainEl.classList.remove('has-group-tabs');
+    return;
+  }
+
   const info = NAV_GROUPS[page] || {};
   // Obtener tabs del grupo: buscar el entry con tabs definidos para este grupo
   let tabs = info.tabs;
@@ -3069,9 +3079,6 @@ function updateGroupTabs(page) {
     const entry = Object.values(NAV_GROUPS).find(v => v.group === group && v.tabs);
     tabs = entry ? entry.tabs : [];
   }
-
-  const tabBar   = document.getElementById('group-tabs');
-  const mainEl   = document.getElementById('main');
 
   if (!tabs || tabs.length <= 1) {
     tabBar.classList.remove('visible');
