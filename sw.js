@@ -35,6 +35,9 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  // Ignorar esquemas no cacheables (chrome-extension, data:, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
   // Requests a Apps Script (API): network-first, fallback a cache
   if (url.hostname === 'script.google.com') {
     event.respondWith(networkFirstData(event.request));
