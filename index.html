@@ -515,6 +515,7 @@ select{cursor:pointer}
     -webkit-tap-highlight-color:transparent;
   }
   .bottom-nav-item.active{color:#F5EDE0}
+  .bottom-nav-item.more-active{color:#F5EDE0}
   .bottom-nav-item .bn-icon{font-size:20px;line-height:1}
   .bottom-nav-item .bn-label{font-size:9px;text-transform:uppercase;letter-spacing:1px}
 
@@ -525,7 +526,70 @@ select{cursor:pointer}
 
 @media(min-width:481px){
   #bottom-nav{display:none}
+  #more-drawer-backdrop{display:none!important}
+  #more-drawer{display:none!important}
 }
+
+/* ─── MORE DRAWER ────────────────────────────────────────────── */
+#more-drawer-backdrop{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(44,31,20,.6);
+  z-index:200;
+  backdrop-filter:blur(2px);
+}
+#more-drawer-backdrop.open{display:block}
+
+#more-drawer{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:var(--marron);
+  z-index:201;
+  border-radius:20px 20px 0 0;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:75vh;
+  overflow-y:auto;
+}
+#more-drawer.open{transform:translateY(0)}
+
+#more-drawer-handle{
+  width:36px;height:4px;
+  background:rgba(255,255,255,.2);
+  border-radius:2px;
+  margin:0 auto 20px;
+}
+#more-drawer-title{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  color:rgba(255,255,255,.3);
+  text-transform:uppercase;
+  margin-bottom:14px;
+  padding-left:4px;
+}
+#more-drawer-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.drawer-item{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;padding:14px 6px;
+  border-radius:12px;
+  background:rgba(255,255,255,.06);
+  border:none;cursor:pointer;
+  color:rgba(255,255,255,.7);
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:.5px;
+  text-transform:uppercase;
+  -webkit-tap-highlight-color:transparent;
+  transition:.15s;
+}
+.drawer-item:active{background:rgba(255,255,255,.12);color:#F5EDE0}
+.drawer-item.active{background:rgba(196,168,130,.2);color:#F5EDE0}
+.drawer-item .di-icon{font-size:22px;line-height:1}
 
 /* ─── LOADER ─────────────────────────────────────────────── */
 #app-loader{
@@ -1476,18 +1540,75 @@ function pwaDismiss() {
     <span class="bn-icon">◆</span>
     <span class="bn-label">Ventas</span>
   </button>
-  <button class="bottom-nav-item" data-page="showroom" onclick="navigateTo('showroom')">
-    <span class="bn-icon">◈</span>
-    <span class="bn-label">Showroom</span>
-  </button>
   <button class="bottom-nav-item" data-page="stock" onclick="navigateTo('stock')">
     <span class="bn-icon">▦</span>
     <span class="bn-label">Stock</span>
   </button>
-  <button class="bottom-nav-item" data-page="dashboard" onclick="toggleSidebar()">
-    <span class="bn-icon">☰</span>
-    <span class="bn-label">Menú</span>
+  <button class="bottom-nav-item" data-page="produccion" onclick="navigateTo('produccion')">
+    <span class="bn-icon">◑</span>
+    <span class="bn-label">Produc.</span>
   </button>
+  <button class="bottom-nav-item" id="more-btn" onclick="toggleMoreDrawer()">
+    <span class="bn-icon">⊞</span>
+    <span class="bn-label">Más</span>
+  </button>
+</div>
+
+<!-- MORE DRAWER -->
+<div id="more-drawer-backdrop" onclick="closeMoreDrawer()"></div>
+<div id="more-drawer">
+  <div id="more-drawer-handle"></div>
+  <div id="more-drawer-title">Secciones</div>
+  <div id="more-drawer-grid">
+    <button class="drawer-item" data-page="kpis" onclick="drawerNav('kpis')">
+      <span class="di-icon">◎</span>KPIs
+    </button>
+    <button class="drawer-item" data-page="showroom" onclick="drawerNav('showroom')">
+      <span class="di-icon">◈</span>Showroom
+    </button>
+    <button class="drawer-item" data-page="capsulas" onclick="drawerNav('capsulas')">
+      <span class="di-icon">◉</span>Cápsulas
+    </button>
+    <button class="drawer-item" data-page="costeo" onclick="drawerNav('costeo')">
+      <span class="di-icon">◐</span>Costeo
+    </button>
+    <button class="drawer-item" data-page="productos" onclick="drawerNav('productos')">
+      <span class="di-icon">▤</span>Productos
+    </button>
+    <button class="drawer-item" data-page="insumos" onclick="drawerNav('insumos')">
+      <span class="di-icon">◫</span>Insumos
+    </button>
+    <button class="drawer-item" data-page="cueros" onclick="drawerNav('cueros')">
+      <span class="di-icon">◻</span>Cueros
+    </button>
+    <button class="drawer-item" data-page="compras" onclick="drawerNav('compras')">
+      <span class="di-icon">◧</span>Compras
+    </button>
+    <button class="drawer-item" data-page="egresos" onclick="drawerNav('egresos')">
+      <span class="di-icon">▽</span>Egresos
+    </button>
+    <button class="drawer-item" data-page="viajes" onclick="drawerNav('viajes')">
+      <span class="di-icon">◈</span>Viajes
+    </button>
+    <button class="drawer-item" data-page="activos" onclick="drawerNav('activos')">
+      <span class="di-icon">◯</span>Activos
+    </button>
+    <button class="drawer-item" data-page="costos-fijos" onclick="drawerNav('costos-fijos')">
+      <span class="di-icon">▷</span>Costos fijos
+    </button>
+    <button class="drawer-item" data-page="tareas" onclick="drawerNav('tareas')">
+      <span class="di-icon">☐</span>To Do
+    </button>
+    <button class="drawer-item" data-page="sets" onclick="drawerNav('sets')">
+      <span class="di-icon">◎</span>Sets
+    </button>
+    <button class="drawer-item" data-page="finanzas" onclick="drawerNav('finanzas')">
+      <span class="di-icon">◑</span>Finanzas
+    </button>
+    <button class="drawer-item" data-page="config" onclick="drawerNav('config')">
+      <span class="di-icon">◈</span>Config
+    </button>
+  </div>
 </div>
 </div><!-- /app -->
 
@@ -2624,7 +2745,38 @@ function setupNav() {
   });
 }
 
+// ─── MORE DRAWER ──────────────────────────────────────────────
+function toggleMoreDrawer() {
+  const drawer   = document.getElementById('more-drawer');
+  const backdrop = document.getElementById('more-drawer-backdrop');
+  const btn      = document.getElementById('more-btn');
+  const isOpen   = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    btn.classList.remove('more-active');
+  } else {
+    // Marcar ítem activo en el drawer según página actual
+    document.querySelectorAll('.drawer-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === state.currentPage);
+    });
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    btn.classList.add('more-active');
+  }
+}
+function closeMoreDrawer() {
+  document.getElementById('more-drawer').classList.remove('open');
+  document.getElementById('more-drawer-backdrop').classList.remove('open');
+  document.getElementById('more-btn').classList.remove('more-active');
+}
+function drawerNav(page) {
+  closeMoreDrawer();
+  setTimeout(() => navigateTo(page), 120); // pequeño delay para que cierre suave
+}
+
 async function navigateTo(page) {
+  closeMoreDrawer();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
@@ -2638,14 +2790,18 @@ async function navigateTo(page) {
     viajes:'Viajes y movilidad', activos:'Activos amortizables',
     'costos-fijos':'Costos fijos', kpis:'KPIs',
     tareas:'To Do operativo', sets:'Sets personalizados', config:'Configuración',
-showroom:'Showroom',
+    showroom:'Showroom', finanzas:'Finanzas',
   };
   document.getElementById('page-title').textContent = titles[page] || page;
   state.currentPage = page;
-  // Sincronizar bottom nav
-document.querySelectorAll('.bottom-nav-item[data-page]').forEach(btn => {
-  btn.classList.toggle('active', btn.dataset.page === page);
-});
+
+  // Sincronizar bottom nav — activo solo si está en la barra principal
+  const mainPages = ['dashboard','ventas','stock','produccion'];
+  document.querySelectorAll('.bottom-nav-item[data-page]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === page);
+  });
+  // Si la página está en el drawer, resaltar el botón "Más"
+  document.getElementById('more-btn')?.classList.toggle('more-active', !mainPages.includes(page));
 
   // Forzar recarga fresca del dashboard siempre
   if (page === 'dashboard') {
