@@ -2528,9 +2528,15 @@ function crearEventoTarea(tarea) {
     var calendar = CalendarApp.getCalendarById(CALENDAR_ID);
     if (!calendar) calendar = CalendarApp.getDefaultCalendar();
 
-    var fechaVenc = tarea.fecha_vencimiento
-      ? new Date(tarea.fecha_vencimiento + 'T09:00:00')
-      : new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+    // Parsear fecha sin problemas de timezone: yyyy-MM-dd → Date local
+    var fechaVenc;
+    if (tarea.fecha_vencimiento) {
+      var partes = String(tarea.fecha_vencimiento).split('-');
+      // new Date(year, month-1, day) usa hora local del script → sin offset de timezone
+      fechaVenc = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 9, 0, 0);
+    } else {
+      fechaVenc = new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+    }
 
     var titulo = '📌 ' + tarea.tarea;
     var descripcion = [

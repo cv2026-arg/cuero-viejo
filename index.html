@@ -5735,8 +5735,15 @@ function fmt(n) {
 
 function fmtDate(d) {
   if (!d) return '—';
+  const s = String(d).trim();
+  // Si es formato yyyy-mm-dd, parsear como fecha local (evita offset de timezone UTC)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const date = new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+    return date.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  }
   const date = new Date(d);
-  if (isNaN(date)) return String(d);
+  if (isNaN(date)) return s;
   return date.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
 }
 
