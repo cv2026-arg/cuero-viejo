@@ -2965,3 +2965,23 @@ function getEventosCalendar(p) {
     return { ok: false, error: e.message, data: [] };
   }
 }
+
+// ─── TEST: ejecutar desde el editor para autorizar CalendarApp ──
+// 1. Seleccioná esta función en el dropdown del editor
+// 2. Click en ▶ Ejecutar
+// 3. Aceptá los permisos de Google Calendar que aparecen
+function testCalendar() {
+  try {
+    var calendar = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!calendar) calendar = CalendarApp.getDefaultCalendar();
+    var hoy = new Date();
+    var fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    var eventos = calendar.getEvents(hoy, fin);
+    Logger.log('✅ Calendar OK. Eventos este mes: ' + eventos.length);
+    eventos.forEach(function(ev) {
+      Logger.log(' - ' + ev.getTitle() + ' | ' + ev.getStartTime());
+    });
+  } catch(e) {
+    Logger.log('❌ Error: ' + e.message);
+  }
+}
