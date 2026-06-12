@@ -886,20 +886,92 @@ function pwaDismiss() {
   </div>
 
   <div class="panel" style="margin-top:20px">
-  <div class="panel-header">
-    <span class="panel-title">Calendario</span>
-    <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm">Abrir en Calendar</a>
+    <div class="panel-header">
+      <span class="panel-title">Calendario</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="calPrev()">‹</button>
+        <span id="cal-mes-label" style="font-family:'DM Mono',monospace;font-size:12px;min-width:120px;text-align:center"></span>
+        <button class="btn btn-outline btn-sm" onclick="calNext()">›</button>
+        <a href="https://calendar.google.com" target="_blank" class="btn btn-outline btn-sm">↗ Google Cal</a>
+      </div>
+    </div>
+
+    <!-- Grilla del calendario -->
+    <div id="mini-cal" style="user-select:none">
+      <!-- días de semana -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
+        ${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d =>
+          `<div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">${d}</div>`
+        ).join('')}
+      </div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+    </div>
+
+    <!-- Botón agregar evento -->
+    <div style="margin-top:16px;text-align:center">
+      <a href="https://calendar.google.com/calendar/r/eventedit" target="_blank" class="btn btn-outline btn-sm">+ Nuevo evento en Google Calendar</a>
+    </div>
   </div>
-  <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--border)">
-    <iframe 
-      src="https://calendar.google.com/calendar/embed?src=cueroviejocba%40gmail.com&ctz=America%2FArgentina%2FCordoba&mode=MONTH&showTitle=0&showNav=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0&hl=es" 
-      style="border:0;width:100%;display:block" 
-      height="400" 
-      frameborder="0" 
-      scrolling="no">
-    </iframe>
-  </div>
-</div>
+
+<style>
+.cal-day{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;font-size:13px;cursor:default;
+  font-family:'DM Sans',sans-serif;color:var(--text);
+  transition:.15s;
+}
+.cal-day.otro-mes{color:var(--text-s);opacity:.35}
+.cal-day.hoy{background:var(--tierra);color:#fff;font-weight:600}
+.cal-day.fin-semana:not(.hoy){color:var(--tierra)}
+</style>
+
+<script>
+(function(){
+  let calDate = new Date();
+
+  function renderCal() {
+    const y = calDate.getFullYear();
+    const m = calDate.getMonth();
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    document.getElementById('cal-mes-label').textContent = meses[m] + ' ' + y;
+
+    const hoy = new Date();
+    const primerDia = new Date(y, m, 1).getDay(); // 0=dom
+    const diasEnMes = new Date(y, m+1, 0).getDate();
+    const diasMesAnt = new Date(y, m, 0).getDate();
+
+    let html = '';
+    // días del mes anterior
+    for (let i = primerDia - 1; i >= 0; i--) {
+      html += `<div class="cal-day otro-mes">${diasMesAnt - i}</div>`;
+    }
+    // días del mes actual
+    for (let d = 1; d <= diasEnMes; d++) {
+      const esHoy = d === hoy.getDate() && m === hoy.getMonth() && y === hoy.getFullYear();
+      const diaSemana = new Date(y, m, d).getDay();
+      const esFin = diaSemana === 0 || diaSemana === 6;
+      html += `<div class="cal-day${esHoy?' hoy':''}${esFin&&!esHoy?' fin-semana':''}">${d}</div>`;
+    }
+    // días del mes siguiente para completar la grilla
+    const total = primerDia + diasEnMes;
+    const restantes = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let d = 1; d <= restantes; d++) {
+      html += `<div class="cal-day otro-mes">${d}</div>`;
+    }
+    document.getElementById('cal-grid').innerHTML = html;
+  }
+
+  window.calPrev = function(){ calDate.setMonth(calDate.getMonth()-1); renderCal(); };
+  window.calNext = function(){ calDate.setMonth(calDate.getMonth()+1); renderCal(); };
+
+  // Renderizar apenas cargue el DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderCal);
+  } else {
+    renderCal();
+  }
+})();
+</script>
 
   <!-- AGREGÁ ESTO ACA ABAJO -->
   <div class="panel" style="margin-top:20px">
