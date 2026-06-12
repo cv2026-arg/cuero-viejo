@@ -2337,6 +2337,35 @@ const CACHEABLE = ['getConfig','getCapsulas','getCategorias','getUnidades','getT
   'getSets','getKPIs','getMovimientos','getFinanzas','getShowroom','getShowroomKPIs',
   'getShowroomHistorial','getProductosConVariantes','getSocios'];
 
+// Qué cache limpiar después de cada escritura
+const WRITE_INVALIDATIONS = {
+  registrarVenta:               ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
+  registrarVentaConTalle:       ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
+  eliminarVenta:                ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
+  crearProducto:                ['getProductos','getStock','getDashboard','getProductosConVariantes'],
+  editarProducto:               ['getProductos','getStock','getDashboard','getProductosConVariantes'],
+  crearInsumo:                  ['getInsumos','getStock'],
+  registrarCompra:              ['getCompras','getInsumos','getStock'],
+  crearLoteCuero:               ['getLotesCuero'],
+  registrarEgreso:              ['getEgresos','getDashboard','getFinanzas','getMovimientos'],
+  registrarViaje:               ['getViajes','getEgresos','getDashboard'],
+  crearActivo:                  ['getActivos'],
+  registrarCostoFijo:           ['getCostosFijos','getDashboard'],
+  eliminarCostoFijo:            ['getCostosFijos','getDashboard'],
+  registrarProduccion:          ['getProduccion','getProduccionAgrupada','getStock'],
+  registrarProduccionConTalles: ['getProduccion','getProduccionAgrupada','getStock'],
+  editarProduccion:             ['getProduccion','getProduccionAgrupada'],
+  crearTarea:                   ['getTareas'],
+  actualizarTarea:              ['getTareas'],
+  crearSet:                     ['getSets'],
+  guardarCotizacion:            ['getCotizaciones'],
+  crearCapsula:                 ['getCapsulas'],
+  eliminarCapsula:              ['getCapsulas'],
+  eliminarCapsulaCompleta:      ['getCapsulas'],
+  actualizarConfig:             ['getConfig'],
+  registrarMovimientoShowroom:  ['getShowroom','getShowroomKPIs','getShowroomHistorial'],
+};
+
 // ─── API (fetch → Apps Script) ────────────────────────────────
 function api(action, payload = {}) {
   // Modo legacy: si corre dentro de Apps Script, usar google.script.run
@@ -2379,9 +2408,16 @@ function api(action, payload = {}) {
         throw new Error(msg);
       }
       console.log('API OK:', action, result.data);
-      // Guardar en cache si es una acción cacheable
+      // Guardar en cache si es una lectura
       if (CACHEABLE.includes(action) && Object.keys(payload).length === 0) {
         cacheSet(action, result.data);
+      }
+      // Invalidar cache si es una escritura y recargar página
+      if (WRITE_INVALIDATIONS[action]) {
+        WRITE_INVALIDATIONS[action].forEach(k => localStorage.removeItem(CV_CACHE_PREFIX + k));
+        state.loaded.clear();
+        // Recargar la página actual en background (sin bloquear el toast de éxito)
+        setTimeout(() => loadPage(state.currentPage), 300);
       }
       return result.data;
     })
