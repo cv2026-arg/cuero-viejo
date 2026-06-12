@@ -2959,10 +2959,10 @@ function getEventosCalendar(p) {
       };
     });
 
-    return { ok: true, data: lista };
+    return lista;  // callAction ya envuelve en {ok:true, data:...}
   } catch(e) {
     Logger.log('Error getEventosCalendar: ' + e.message);
-    return { ok: false, error: e.message, data: [] };
+    throw e;  // callAction captura y devuelve {ok:false, error:...}
   }
 }
 
