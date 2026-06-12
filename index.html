@@ -896,49 +896,100 @@ function pwaDismiss() {
       </div>
     </div>
 
-    <!-- Grilla del calendario -->
-    <div id="mini-cal" style="user-select:none">
-      <!-- días de semana -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">
-        ${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d =>
-          `<div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">${d}</div>`
-        ).join('')}
-      </div>
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+    <!-- días de semana -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;margin-top:12px">
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Dom</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Lun</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Mar</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Mié</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Jue</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Vie</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);padding:4px 0">Sáb</div>
     </div>
+    <!-- Grilla del calendario -->
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+
+    <!-- Lista de eventos del día seleccionado -->
+    <div id="cal-eventos-dia" style="margin-top:14px;min-height:24px"></div>
 
     <!-- Botón agregar evento -->
-    <div style="margin-top:16px;text-align:center">
-      <a href="https://calendar.google.com/calendar/r/eventedit" target="_blank" class="btn btn-outline btn-sm">+ Nuevo evento en Google Calendar</a>
+    <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <a href="https://calendar.google.com/calendar/r/eventedit" target="_blank" class="btn btn-outline btn-sm">+ Nuevo evento</a>
+      <span id="cal-sync-status" style="font-size:11px;color:var(--text-s)"></span>
     </div>
   </div>
 
 <style>
 .cal-day{
-  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
-  border-radius:8px;font-size:13px;cursor:default;
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:8px;font-size:13px;cursor:pointer;
   font-family:'DM Sans',sans-serif;color:var(--text);
-  transition:.15s;
+  transition:.15s;position:relative;gap:2px;
 }
-.cal-day.otro-mes{color:var(--text-s);opacity:.35}
+.cal-day:hover:not(.otro-mes){background:var(--beige-d)}
+.cal-day.otro-mes{color:var(--text-s);opacity:.35;cursor:default}
 .cal-day.hoy{background:var(--tierra);color:#fff;font-weight:600}
 .cal-day.fin-semana:not(.hoy){color:var(--tierra)}
+.cal-day.seleccionado:not(.hoy){background:var(--beige-d);outline:2px solid var(--tierra)}
+.cal-dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;max-width:100%}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--tierra-l);flex-shrink:0}
+.cal-dot.tarea{background:#6B5240}
+.cal-ev-item{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  border-radius:8px;background:var(--beige-d);margin-bottom:6px;font-size:12px;
+}
+.cal-ev-dot{width:8px;height:8px;border-radius:50%;background:var(--tierra-l);flex-shrink:0}
+.cal-ev-dot.tarea{background:#6B5240}
 </style>
 
 <script>
 (function(){
   let calDate = new Date();
+  let calEventos = []; // eventos del mes actual cargados desde Google Calendar
+  let calDiaSeleccionado = null;
 
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // ── Cargar eventos desde el backend (Apps Script → Google Calendar) ──
+  function cargarEventos(y, m) {
+    document.getElementById('cal-sync-status').textContent = 'Cargando eventos...';
+    api('getEventosCalendar', { year: y, month: m + 1 })
+      .then(lista => {
+        calEventos = Array.isArray(lista) ? lista : [];
+        document.getElementById('cal-sync-status').textContent =
+          calEventos.length ? `${calEventos.length} evento${calEventos.length !== 1 ? 's' : ''} este mes` : '';
+        renderCal();
+      })
+      .catch(() => {
+        calEventos = [];
+        document.getElementById('cal-sync-status').textContent = 'Sin conexión con Google Calendar';
+        renderCal();
+      });
+  }
+
+  // ── Render del grid ──────────────────────────────────────
   function renderCal() {
     const y = calDate.getFullYear();
     const m = calDate.getMonth();
-    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    document.getElementById('cal-mes-label').textContent = meses[m] + ' ' + y;
+    document.getElementById('cal-mes-label').textContent = MESES[m] + ' ' + y;
 
     const hoy = new Date();
-    const primerDia = new Date(y, m, 1).getDay(); // 0=dom
-    const diasEnMes = new Date(y, m+1, 0).getDate();
+    const primerDia = new Date(y, m, 1).getDay();
+    const diasEnMes = new Date(y, m + 1, 0).getDate();
     const diasMesAnt = new Date(y, m, 0).getDate();
+
+    // Indexar eventos por día (solo del mes actual)
+    const eventosPorDia = {};
+    calEventos.forEach(ev => {
+      const fecha = ev.fecha || '';
+      const partes = fecha.split('-');
+      if (partes.length === 3 && parseInt(partes[1], 10) - 1 === m && parseInt(partes[0], 10) === y) {
+        const dia = parseInt(partes[2], 10);
+        if (!eventosPorDia[dia]) eventosPorDia[dia] = [];
+        eventosPorDia[dia].push(ev);
+      }
+    });
 
     let html = '';
     // días del mes anterior
@@ -948,28 +999,83 @@ function pwaDismiss() {
     // días del mes actual
     for (let d = 1; d <= diasEnMes; d++) {
       const esHoy = d === hoy.getDate() && m === hoy.getMonth() && y === hoy.getFullYear();
+      const esSel = calDiaSeleccionado === d;
       const diaSemana = new Date(y, m, d).getDay();
       const esFin = diaSemana === 0 || diaSemana === 6;
-      html += `<div class="cal-day${esHoy?' hoy':''}${esFin&&!esHoy?' fin-semana':''}">${d}</div>`;
+      const evs = eventosPorDia[d] || [];
+
+      let dots = '';
+      if (evs.length) {
+        const visibles = evs.slice(0, 3);
+        dots = `<div class="cal-dots">${visibles.map(ev =>
+          `<div class="cal-dot${ev.titulo && ev.titulo.startsWith('📌') ? ' tarea' : ''}"></div>`
+        ).join('')}${evs.length > 3 ? '<div class="cal-dot" style="opacity:.4"></div>' : ''}</div>`;
+      }
+
+      html += `<div class="cal-day${esHoy?' hoy':''}${esFin&&!esHoy?' fin-semana':''}${esSel&&!esHoy?' seleccionado':''}"
+        onclick="calSelectDay(${d})">${d}${dots}</div>`;
     }
-    // días del mes siguiente para completar la grilla
+    // días del mes siguiente
     const total = primerDia + diasEnMes;
     const restantes = total % 7 === 0 ? 0 : 7 - (total % 7);
     for (let d = 1; d <= restantes; d++) {
       html += `<div class="cal-day otro-mes">${d}</div>`;
     }
     document.getElementById('cal-grid').innerHTML = html;
+
+    // Si hay día seleccionado, mostrar sus eventos
+    if (calDiaSeleccionado && eventosPorDia[calDiaSeleccionado]) {
+      mostrarEventosDia(calDiaSeleccionado, eventosPorDia[calDiaSeleccionado]);
+    } else {
+      document.getElementById('cal-eventos-dia').innerHTML = '';
+    }
   }
 
-  window.calPrev = function(){ calDate.setMonth(calDate.getMonth()-1); renderCal(); };
-  window.calNext = function(){ calDate.setMonth(calDate.getMonth()+1); renderCal(); };
+  function mostrarEventosDia(d, evs) {
+    const y = calDate.getFullYear();
+    const m = calDate.getMonth();
+    const label = `${d} de ${MESES[m]}`;
+    const items = evs.map(ev => {
+      const esTarea = ev.titulo && ev.titulo.startsWith('📌');
+      const hora = ev.hora ? `<span style="color:var(--text-s);font-family:'DM Mono',monospace">${ev.hora}</span> ` : '';
+      return `<div class="cal-ev-item">
+        <div class="cal-ev-dot${esTarea ? ' tarea' : ''}"></div>
+        <div style="flex:1">${hora}<b>${ev.titulo}</b></div>
+      </div>`;
+    }).join('');
+    document.getElementById('cal-eventos-dia').innerHTML =
+      `<div style="font-size:11px;color:var(--text-s);margin-bottom:8px;font-family:'DM Mono',monospace">${label}</div>${items}`;
+  }
 
-  // Renderizar apenas cargue el DOM
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderCal);
-  } else {
+  window.calSelectDay = function(d) {
+    const y = calDate.getFullYear();
+    const m = calDate.getMonth();
+    calDiaSeleccionado = (calDiaSeleccionado === d) ? null : d;
     renderCal();
-  }
+  };
+
+  window.calPrev = function() {
+    calDate.setDate(1);
+    calDate.setMonth(calDate.getMonth() - 1);
+    calDiaSeleccionado = null;
+    calEventos = [];
+    cargarEventos(calDate.getFullYear(), calDate.getMonth());
+  };
+
+  window.calNext = function() {
+    calDate.setDate(1);
+    calDate.setMonth(calDate.getMonth() + 1);
+    calDiaSeleccionado = null;
+    calEventos = [];
+    cargarEventos(calDate.getFullYear(), calDate.getMonth());
+  };
+
+  // Arrancar — primero mostrar el grid, luego cargar eventos
+  renderCal();
+  // cargarEventos se llama desde loadDashboard para no hacer doble fetch
+  window._calInit = function() {
+    cargarEventos(calDate.getFullYear(), calDate.getMonth());
+  };
 })();
 </script>
 
@@ -3136,6 +3242,9 @@ document.getElementById('stock-summary').innerHTML = topClientas.length
         </div>`;
       }).join('')
     : '<div style="text-align:center;padding:20px;color:var(--text-s)">Sin tareas pendientes 🎉</div>';
+
+  // Cargar eventos del Google Calendar en el mini-calendario
+  if (typeof window._calInit === 'function') window._calInit();
 }
 
 
