@@ -111,6 +111,8 @@ body{
   color:#F5EDE0;border-left-color:var(--cuero-l);font-weight:500;
 }
 .nav-item .icon{font-size:16px;width:20px;text-align:center}
+.nav-item.nav-sub{padding-left:28px;font-size:12.5px;color:rgba(255,255,255,.55)}
+.nav-item.nav-sub.active{color:#F5EDE0}
 .nav-badge{
   margin-left:auto;background:var(--danger);
   color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;
@@ -794,77 +796,87 @@ function pwaDismiss() {
     <div class="sub">Sistema de Gestión</div>
   </div>
   <div id="nav">
-    <div class="nav-section">Principal</div>
+    <!-- DASHBOARD -->
     <div class="nav-item active" data-page="dashboard">
       <span class="icon">◈</span> Dashboard
     </div>
-    <div class="nav-item" data-page="kpis">
-      <span class="icon">◎</span> KPIs
-    </div>
 
+    <!-- VENTAS -->
     <div class="nav-section">Ventas</div>
-    <div class="nav-item" data-page="ventas">
+    <div class="nav-item nav-sub" data-page="ventas">
       <span class="icon">◆</span> Ventas
     </div>
-    <div class="nav-item" data-page="stock">
-      <span class="icon">▦</span> Stock productos
-    </div>
-    <div class="nav-item" data-page="capsulas">
-      <span class="icon">◉</span> Cápsulas
+    <div class="nav-item nav-sub" data-page="finanzas">
+      <span class="icon">◑</span> Finanzas
     </div>
 
-    <div class="nav-section">Producción</div>
-    <div class="nav-item" data-page="costeo">
-      <span class="icon">◐</span> Costeo
+    <!-- INVENTARIO -->
+    <div class="nav-section">Inventario</div>
+    <div class="nav-item nav-sub" data-page="stock">
+      <span class="icon">▦</span> Stock
     </div>
-    <div class="nav-item" data-page="produccion">
-      <span class="icon">◑</span> Producción
-    </div>
-    <div class="nav-item" data-page="productos">
+    <div class="nav-item nav-sub" data-page="productos">
       <span class="icon">▤</span> Productos
     </div>
-
-    <div class="nav-section">Insumos</div>
-    <div class="nav-item" data-page="insumos">
+    <div class="nav-item nav-sub" data-page="insumos">
       <span class="icon">◫</span> Insumos
     </div>
-    <div class="nav-item" data-page="cueros">
-      <span class="icon">◻</span> Cueros / Lotes
-    </div>
-    <div class="nav-item" data-page="compras">
-      <span class="icon">◧</span> Compras
+    <div class="nav-item nav-sub" data-page="cueros">
+      <span class="icon">◻</span> Cueros
     </div>
 
-    <div class="nav-section">Operativo</div>
-    <div class="nav-item" data-page="egresos">
+    <!-- PRODUCCIÓN -->
+    <div class="nav-section">Producción</div>
+    <div class="nav-item nav-sub" data-page="produccion">
+      <span class="icon">◑</span> Producción
+    </div>
+    <div class="nav-item nav-sub" data-page="capsulas">
+      <span class="icon">◉</span> Cápsulas
+    </div>
+    <div class="nav-item nav-sub" data-page="costeo">
+      <span class="icon">◐</span> Costeo
+    </div>
+
+    <!-- SHOWROOM -->
+    <div class="nav-section">Showroom</div>
+    <div class="nav-item nav-sub" data-page="showroom">
+      <span class="icon">◎</span> Showroom
+    </div>
+
+    <!-- GASTOS -->
+    <div class="nav-section">Gastos</div>
+    <div class="nav-item nav-sub" data-page="egresos">
       <span class="icon">▽</span> Egresos
     </div>
-    <div class="nav-item" data-page="viajes">
-      <span class="icon">◈</span> Viajes / Nafta
+    <div class="nav-item nav-sub" data-page="compras">
+      <span class="icon">◧</span> Compras
     </div>
-    <div class="nav-item" data-page="activos">
+    <div class="nav-item nav-sub" data-page="viajes">
+      <span class="icon">◈</span> Viajes
+    </div>
+    <div class="nav-item nav-sub" data-page="activos">
       <span class="icon">◯</span> Activos
     </div>
-    <div class="nav-item" data-page="costos-fijos">
+    <div class="nav-item nav-sub" data-page="costos-fijos">
       <span class="icon">▷</span> Costos fijos
     </div>
 
+    <!-- GESTIÓN -->
     <div class="nav-section">Gestión</div>
-    <div class="nav-section">Showroom</div>
-<div class="nav-item" data-page="showroom">
-  <span class="icon">◈</span> Showroom
-</div>
-    <div class="nav-item" data-page="tareas">
-      <span class="icon">☐</span> To Do <span class="nav-badge" id="badge-tareas">0</span>
+    <div class="nav-item nav-sub" data-page="kpis">
+      <span class="icon">◎</span> KPIs
     </div>
-    <div class="nav-item" data-page="sets">
-      <span class="icon">◎</span> Sets personalizados
+    <div class="nav-item nav-sub" data-page="tareas">
+      <span class="icon">☐</span> Tareas <span class="nav-badge" id="badge-tareas">0</span>
     </div>
-    <div class="nav-item" data-page="config">
-      <span class="icon">◈</span> Configuración
+    <div class="nav-item nav-sub" data-page="sets">
+      <span class="icon">◎</span> Sets
+    </div>
+    <div class="nav-item nav-sub" data-page="config">
+      <span class="icon">◈</span> Config
     </div>
   </div>
-  <div id="sidebar-footer">v2.0 · 2024</div>
+  <div id="sidebar-footer">v2.0 · 2026</div>
 </nav>
 
 <!-- MAIN -->
