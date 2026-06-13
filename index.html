@@ -39,11 +39,29 @@
   --shadow:   rgba(139,111,82,0.12);
   --shadow-m: rgba(139,111,82,0.22);
   --success:  #5C7A40;
+  --success-l:#7A9A55;
   --warning:  #C4882A;
   --danger:   #A04040;
+  --danger-l: #C26060;
   --info:     #4A6A8A;
+  --info-l:   #6B8AAB;
+
+  /* superficies premium para secciones densas (kpis, gráficos) */
+  --premium-bg:    linear-gradient(150deg,#FFFDF9 0%,#F7F0E4 100%);
+  --premium-panel: linear-gradient(155deg,#FFFFFF 0%,#FBF5EC 100%);
+  --premium-dark:  linear-gradient(150deg,#3E2E20 0%,#574232 100%);
+  --gold:          #C4A882;
+  --gold-soft:     rgba(196,168,130,.18);
+
+  /* escala de sombras */
+  --shadow:    rgba(74,55,40,0.08);
+  --shadow-m:  rgba(74,55,40,0.16);
+  --shadow-l:  rgba(74,55,40,0.24);
+  --ring:      0 0 0 1px rgba(196,168,130,.25);
+
   --r:        10px;
   --r-l:      16px;
+  --r-xl:     22px;
   --gap:      20px;
 }
 
@@ -161,25 +179,37 @@ body{
 }
 
 /* ─── CARDS & GRIDS ──────────────────────────────────────── */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--gap);margin-bottom:28px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:16px;margin-bottom:28px}
 .kpi-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r-l);padding:20px;
-  box-shadow:0 2px 12px var(--shadow);
-  transition:.2s;position:relative;overflow:hidden;
+  background:var(--premium-panel);border:1px solid var(--border);
+  border-radius:var(--r-l);padding:18px 20px;
+  box-shadow:0 1px 2px var(--shadow),0 6px 18px -8px var(--shadow-m);
+  transition:transform .2s ease,box-shadow .2s ease;
+  position:relative;overflow:hidden;
+}
+/* halo de acento difuso en la esquina */
+.kpi-card::after{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,var(--gold-soft) 0%,transparent 70%);
+  pointer-events:none;
 }
 .kpi-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--tierra-l);
+  content:'';position:absolute;top:0;left:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--tierra-l),var(--cuero));
 }
-.kpi-card.verde::before{background:var(--success)}
-.kpi-card.rojo::before{background:var(--danger)}
-.kpi-card.azul::before{background:var(--info)}
-.kpi-card.oliva::before{background:var(--oliva)}
-.kpi-card:hover{box-shadow:0 4px 20px var(--shadow-m);transform:translateY(-1px)}
-.kpi-label{font-size:11px;color:var(--text-s);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;font-family:'DM Mono',monospace}
-.kpi-value{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--marron);line-height:1;word-break:break-word;overflow-wrap:break-word}
-.kpi-sub{font-size:11px;color:var(--text-s);margin-top:4px}
+.kpi-card.verde::before{background:linear-gradient(180deg,var(--success-l),var(--success))}
+.kpi-card.rojo::before{background:linear-gradient(180deg,var(--danger-l),var(--danger))}
+.kpi-card.azul::before{background:linear-gradient(180deg,var(--info-l),var(--info))}
+.kpi-card.oliva::before{background:linear-gradient(180deg,var(--oliva-l),var(--oliva))}
+.kpi-card:hover{box-shadow:0 2px 4px var(--shadow),0 14px 28px -10px var(--shadow-l);transform:translateY(-2px)}
+.kpi-label{font-size:10.5px;color:var(--text-s);letter-spacing:.8px;margin-bottom:8px;text-transform:uppercase;font-family:'DM Mono',monospace;position:relative}
+.kpi-value{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--marron);line-height:1;word-break:break-word;overflow-wrap:break-word;position:relative}
+.kpi-sub{font-size:11px;color:var(--text-s);margin-top:6px;position:relative;display:flex;align-items:center;gap:5px}
+/* mini-tendencia opcional dentro del sub */
+.kpi-trend{font-family:'DM Mono',monospace;font-weight:500;display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:20px;font-size:10px}
+.kpi-trend.up{color:var(--success);background:#E8F5E0}
+.kpi-trend.down{color:var(--danger);background:#FDEAEA}
 
 .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap)}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
@@ -189,7 +219,12 @@ body{
 .panel{
   background:var(--card);border:1px solid var(--border);
   border-radius:var(--r-l);padding:24px;
-  box-shadow:0 2px 12px var(--shadow);
+  box-shadow:0 1px 2px var(--shadow),0 8px 24px -12px var(--shadow-m);
+}
+/* paneles densos/premium (gráficos, indicadores) */
+.panel.premium{
+  background:var(--premium-panel);
+  box-shadow:0 1px 2px var(--shadow),0 16px 40px -16px var(--shadow-l);
 }
 .panel-header{
   display:flex;align-items:center;justify-content:space-between;
@@ -198,7 +233,13 @@ body{
 }
 .panel-title{
   font-family:'Cormorant Garamond',serif;
-  font-size:18px;font-weight:400;color:var(--marron);
+  font-size:19px;font-weight:400;color:var(--marron);letter-spacing:.3px;
+  display:flex;align-items:center;gap:9px;
+}
+/* acento dorado antes del título de panel */
+.panel-title::before{
+  content:'';width:3px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--gold),var(--cuero));flex-shrink:0;
 }
 .panel-actions{display:flex;gap:8px}
 
@@ -1159,19 +1200,26 @@ function pwaDismiss() {
 <div class="page active" id="page-dashboard">
   <div class="kpi-grid" id="kpi-grid"></div>
   <div class="grid-2" style="margin-bottom:20px">
-    <div class="panel">
+    <div class="panel premium">
       <div class="panel-header">
         <span class="panel-title">Ventas por mes</span>
       </div>
       <div id="chart-ventas-mes"></div>
     </div>
-    <div class="panel">
+    <div class="panel premium">
       <div class="panel-header">
         <span class="panel-title">Ventas por cápsula</span>
       </div>
       <div id="chart-capsulas"></div>
     </div>
   </div>
+  <div class="panel premium" style="margin-bottom:20px">
+    <div class="panel-header">
+      <span class="panel-title">Distribución de ventas por cápsula</span>
+    </div>
+    <div id="chart-donut-capsulas"></div>
+  </div>
+
   <div class="grid-2">
     <div class="panel">
       <div class="panel-header">
@@ -1439,7 +1487,7 @@ function pwaDismiss() {
     <!-- ════════════════════ FINANZAS ══════════════════════ -->
     <div class="page" id="page-finanzas">
       <div class="kpi-grid" id="fin-kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px"></div>
-      <div class="panel">
+      <div class="panel premium">
         <div class="panel-header">
           <span class="panel-title">Resultados por mes</span>
         </div>
@@ -1454,7 +1502,7 @@ function pwaDismiss() {
           </table>
         </div>
       </div>
-      <div class="panel" style="margin-top:20px">
+      <div class="panel premium" style="margin-top:20px">
         <div class="panel-header">
           <span class="panel-title">Resultado por cápsula</span>
         </div>
@@ -1911,11 +1959,11 @@ function pwaDismiss() {
     <div class="page" id="page-kpis">
       <div class="kpi-grid" id="kpis-grid"></div>
       <div class="grid-2">
-        <div class="panel">
+        <div class="panel premium">
           <div class="panel-header"><span class="panel-title">Análisis de rentabilidad</span></div>
           <div id="rentabilidad-detail"></div>
         </div>
-        <div class="panel">
+        <div class="panel premium">
           <div class="panel-header"><span class="panel-title">Métricas operativas</span></div>
           <div id="metricas-operativas"></div>
         </div>
@@ -3447,6 +3495,52 @@ async function loadPage(page) {
 }
 
 // ─── DASHBOARD ─────────────────────────────────────────────────
+// ── Donut chart SVG para distribución por cápsula ───────────
+function renderDonutCapsulas(caps) {
+  const el = document.getElementById('chart-donut-capsulas');
+  if (!el) return;
+  if (!caps || !caps.length) { el.innerHTML = '<div class="empty-state"><p>Sin datos</p></div>'; return; }
+
+  const palette = ['#8B6F52','#6B7A4A','#A0784A','#C4A882','#4A6A8A','#A04040','#8E9E68','#D4B896','#6B5240','#C4882A'];
+  const total = caps.reduce((s,[,v]) => s + v, 0) || 1;
+  const cx = 90, cy = 90, r = 66, sw = 26;
+  const C = 2 * Math.PI * r;
+  let offset = 0;
+  const segs = caps.map(([cap, val], i) => {
+    const frac = val / total;
+    const dash = frac * C;
+    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+        stroke="${palette[i % palette.length]}" stroke-width="${sw}"
+        stroke-dasharray="${dash.toFixed(2)} ${(C - dash).toFixed(2)}"
+        stroke-dashoffset="${(-offset).toFixed(2)}"
+        transform="rotate(-90 ${cx} ${cy})"
+        style="transition:stroke-dasharray .6s ease"></circle>`;
+    offset += dash;
+    return seg;
+  }).join('');
+
+  const legend = caps.map(([cap, val], i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;min-width:0">
+      <span style="width:10px;height:10px;border-radius:3px;background:${palette[i % palette.length]};flex-shrink:0"></span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-m)">${cap}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-s)">${((val/total)*100).toFixed(0)}%</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--marron);font-weight:500;flex:0 0 64px;text-align:right">${fmt(val)}</span>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap">
+      <div style="position:relative;flex:0 0 180px;width:180px;height:180px;margin:0 auto">
+        <svg viewBox="0 0 180 180" width="180" height="180">${segs}</svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text-s);text-transform:uppercase">Total</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--marron);line-height:1.1">${fmt(total)}</div>
+          <div style="font-size:10px;color:var(--text-s)">${caps.length} cápsulas</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">${legend}</div>
+    </div>`;
+}
+
 async function loadDashboard() {
   state.tareas = [];
   const [d, tareas, ventas] = await Promise.all([
@@ -3482,8 +3576,8 @@ state.ventas = ventas || [];
       ${meses.map(m => `
         <div style="display:flex;align-items:center;gap:8px;font-size:12px;min-width:0">
           <div style="flex:0 0 44px;text-align:right;color:var(--text-s);font-family:'DM Mono',monospace;font-size:11px">${m.mes.slice(5)}</div>
-          <div style="flex:1;min-width:0;background:var(--beige-d);border-radius:3px;overflow:hidden">
-            <div style="height:22px;width:${(m.total/max*100).toFixed(1)}%;background:var(--tierra-l);border-radius:3px;transition:.4s"></div>
+          <div style="flex:1;min-width:0;background:var(--beige-d);border-radius:6px;overflow:hidden">
+            <div style="height:20px;width:${(m.total/max*100).toFixed(1)}%;background:linear-gradient(90deg,var(--cuero-l),var(--tierra));border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px var(--shadow-m)"></div>
           </div>
           <div style="flex:0 0 70px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m);text-align:right">${fmt(m.total)}</div>
         </div>
@@ -3498,14 +3592,17 @@ state.ventas = ventas || [];
       ${caps.map(([cap, val]) => `
         <div style="display:flex;align-items:center;gap:8px;font-size:12px;min-width:0">
           <div style="flex:0 0 70px;text-align:right;color:var(--text-s);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${cap}</div>
-          <div style="flex:1;min-width:0;background:var(--beige-d);border-radius:3px;overflow:hidden">
-            <div style="height:22px;width:${(val/maxC*100).toFixed(1)}%;background:var(--oliva-l);border-radius:3px;transition:.4s"></div>
+          <div style="flex:1;min-width:0;background:var(--beige-d);border-radius:6px;overflow:hidden">
+            <div style="height:20px;width:${(val/maxC*100).toFixed(1)}%;background:linear-gradient(90deg,var(--oliva-l),var(--oliva));border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px var(--shadow-m)"></div>
           </div>
           <div style="flex:0 0 70px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m);text-align:right">${fmt(val)}</div>
         </div>
       `).join('')}
     </div>
   ` : '<div class="empty-state"><p>Sin datos</p></div>';
+
+  // ── Donut SVG: distribución de ventas por cápsula ──────────
+  renderDonutCapsulas(caps);
 
   const productosMap = {};
 (state.ventas || []).forEach(v => {
