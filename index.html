@@ -3989,7 +3989,7 @@ async function loadCosteo() {
   // Estado inicial: modo nuevo
   state.tipoProductoCosteo = 'nuevo';
 
-  renderCotizaciones(cotizaciones);
+  renderCotizaciones(state.cotizaciones);
 }
 
 function autofillLoteCueroCosteo() {
@@ -6120,6 +6120,7 @@ async function loadShowroom() {
 });
 
   // Para retiro solo mostrar los que están en showroom
+  const showroomData = state.showroom || {};
   const enShowroom = (showroomData.inventario || []).map(item => ({
   value: item.id_producto,
   label: item.nombre_producto,
