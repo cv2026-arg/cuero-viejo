@@ -880,6 +880,67 @@ select{cursor:pointer}
 .empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.5}
 .empty-state p{font-size:14px}
 
+/* ─── SEARCHABLE SELECT ─────────────────────────────────── */
+.searchable-dropdown{
+  display:none;
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;right:0;
+  z-index:999;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  max-height:240px;
+  overflow-y:auto;
+  box-shadow:0 4px 20px rgba(0,0,0,.12);
+  -webkit-overflow-scrolling:touch;
+}
+.searchable-dropdown [data-value]{
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:13px;
+  border-bottom:1px solid var(--border);
+  line-height:1.4;
+  transition:background .1s;
+}
+.searchable-dropdown [data-value]:last-child{border-bottom:none}
+.searchable-dropdown [data-value]:active,
+.searchable-dropdown [data-value]:hover{background:var(--beige)}
+@media(max-width:480px){
+  .searchable-dropdown [data-value]{
+    padding:14px 16px; /* área de toque más grande */
+    font-size:14px;
+  }
+}
+
+/* ─── SEARCHABLE SELECT INPUT ───────────────────────────── */
+.searchable-input{
+  width:100%;
+  box-sizing:border-box;
+  display:block;
+  /* Hereda todos los estilos de input del proyecto */
+  font-family:inherit;
+  font-size:14px;
+  padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  background:var(--bg);
+  color:var(--text);
+  outline:none;
+  transition:border-color .15s;
+}
+.searchable-input:focus{border-color:var(--tierra)}
+
+/* En mobile el input searchable recibe los estilos del media query global */
+@media(max-width:480px){
+  .searchable-input{
+    padding:13px 14px;
+    font-size:16px; /* evita zoom en iOS */
+    border-radius:10px;
+    border-width:1.5px;
+  }
+}
+
 /* ─── CAPSULA TAG ────────────────────────────────────────── */
 .cap-tag{
   font-size:10px;padding:2px 8px;border-radius:10px;
@@ -6260,15 +6321,11 @@ function makeSearchable(selectId, opciones, config) {
   input.type = 'text';
   input.placeholder = placeholder;
   input.autocomplete = 'off';
-  input.style.cssText = 'width:100%;box-sizing:border-box';
+  input.className = 'searchable-input';
   wrapper.insertBefore(input, select);
 
   const dropdown = document.createElement('div');
-  dropdown.style.cssText = `
-    display:none;position:absolute;top:100%;left:0;right:0;z-index:999;
-    background:var(--bg);border:1px solid var(--border);border-radius:var(--r);
-    max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.10);
-  `;
+  dropdown.className = 'searchable-dropdown';
   wrapper.appendChild(dropdown);
 
   function renderOpciones(filtro) {
@@ -6279,13 +6336,11 @@ function makeSearchable(selectId, opciones, config) {
 
     dropdown.innerHTML = filtradas.length
       ? filtradas.map(o => `
-          <div data-value="${o.value}" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line);line-height:1.4"
-            onmouseover="this.style.background='var(--beige)'"
-            onmouseout="this.style.background=''">
+          <div data-value="${o.value}">
             <div style="font-weight:500">${o.label}</div>
             ${o.sub ? `<div style="font-size:11px;color:var(--text-s);margin-top:2px">${o.sub}</div>` : ''}
           </div>`).join('')
-      : '<div style="padding:12px 14px;color:var(--text-s);font-size:13px">Sin resultados</div>';
+      : '<div style="padding:14px 16px;color:var(--text-s);font-size:13px">Sin resultados</div>';
 
     dropdown.style.display = 'block';
 
