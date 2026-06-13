@@ -4916,11 +4916,11 @@ async function loadCompras() {
   state.compras = (r0.status === 'fulfilled' ? r0.value : null) || [];
   state.insumos = (r1.status === 'fulfilled' ? r1.value : null) || [];
   const sel = document.getElementById('c-insumo');
-  sel.innerHTML = '<option value="">Seleccionar...</option>' + insumos.map(i =>
+  sel.innerHTML = '<option value="">Seleccionar...</option>' + state.insumos.map(i =>
     `<option value="${i.id_insumo}" data-unit="${i.unidad}" data-cat="${i.categoria}">${i.nombre_insumo} (${i.unidad})</option>`
   ).join('');
 
-  const opcionesInsumos = insumos.map(i => ({
+  const opcionesInsumos = state.insumos.map(i => ({
     value: i.id_insumo,
     label: i.nombre_insumo || '',
     sub:   (i.categoria || '') + (i.unidad ? ' · ' + i.unidad : '')
@@ -4929,7 +4929,7 @@ async function loadCompras() {
     placeholder: 'Buscar insumo...',
     onSelect: () => autoFillCompra()
   });
-  document.getElementById('compras-body').innerHTML = compras.map(c => `
+  document.getElementById('compras-body').innerHTML = state.compras.map(c => `
     <tr>
       <td class="td-mono">${c.id_compra}</td>
       <td>${fmtDate(c.fecha)}</td>
@@ -5120,11 +5120,13 @@ async function eliminarCostoFijo(id) {
 // ─── KPIs ────────────────────────────────────────────────────
 async function loadKPIs() {
   const k = await api('getKPIs');
+  if (!k) return;
+  const n = v => (v == null ? 0 : Number(v));
   document.getElementById('kpis-grid').innerHTML = [
     { label:'Ticket promedio', val:fmt(k.ticketPromedio), cls:'verde' },
-    { label:'Margen bruto', val:k.margenBruto.toFixed(1)+'%', cls: k.margenBruto > 30 ? 'verde' : '' },
-    { label:'Rotación inventario', val:k.rotacionInventario.toFixed(1)+'%' },
-    { label:'Total activos', val:k.totalActivos },
+    { label:'Margen bruto', val:n(k.margenBruto).toFixed(1)+'%', cls: n(k.margenBruto) > 30 ? 'verde' : '' },
+    { label:'Rotación inventario', val:n(k.rotacionInventario).toFixed(1)+'%' },
+    { label:'Total activos', val:k.totalActivos ?? '—' },
     { label:'Amort. anual', val:fmt(k.amortizacionAnual) },
     { label:'Pendiente cobro', val:fmt(k.pendientePago), cls:'azul' },
   ].map(k => `<div class="kpi-card ${k.cls||''}"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.val}</div></div>`).join('');
@@ -5134,20 +5136,20 @@ async function loadKPIs() {
       <div class="costo-row"><span>Ventas totales</span><span class="td-mono" style="color:var(--success);font-weight:600">${fmt(k.totalVentas)}</span></div>
       <div class="costo-row"><span>Egresos totales</span><span class="td-mono" style="color:var(--danger)">${fmt(k.totalEgresos)}</span></div>
       <hr style="border:none;border-top:1px solid var(--border)">
-      <div class="costo-row"><span style="font-weight:600">Beneficio neto</span><span class="td-mono" style="font-weight:600;color:${k.beneficioNeto>=0?'var(--success)':'var(--danger)'};font-size:18px">${fmt(k.beneficioNeto)}</span></div>
-      <div class="costo-row"><span>Margen bruto</span><span class="td-mono">${k.margenBruto.toFixed(2)}%</span></div>
+      <div class="costo-row"><span style="font-weight:600">Beneficio neto</span><span class="td-mono" style="font-weight:600;color:${n(k.beneficioNeto)>=0?'var(--success)':'var(--danger)'};font-size:18px">${fmt(k.beneficioNeto)}</span></div>
+      <div class="costo-row"><span>Margen bruto</span><span class="td-mono">${n(k.margenBruto).toFixed(2)}%</span></div>
       <div class="costo-row"><span>Ticket promedio</span><span class="td-mono">${fmt(k.ticketPromedio)}</span></div>
     </div>
   `;
 
   document.getElementById('metricas-operativas').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="costo-row"><span>Total ventas</span><span class="td-mono">${k.totalVentasCount}</span></div>
-      <div class="costo-row"><span>Productos en catálogo</span><span class="td-mono">${k.totalProductos}</span></div>
-      <div class="costo-row"><span>Rotación de inventario</span><span class="td-mono">${k.rotacionInventario.toFixed(1)}%</span></div>
+      <div class="costo-row"><span>Total ventas</span><span class="td-mono">${k.totalVentasCount ?? 0}</span></div>
+      <div class="costo-row"><span>Productos en catálogo</span><span class="td-mono">${k.totalProductos ?? 0}</span></div>
+      <div class="costo-row"><span>Rotación de inventario</span><span class="td-mono">${n(k.rotacionInventario).toFixed(1)}%</span></div>
       <div class="costo-row"><span>Ingreso potencial stock</span><span class="td-mono">${fmt(k.ingresoPotencial)}</span></div>
-      <div class="costo-row"><span>Sin stock</span><span class="td-mono">${k.stockSinStock}</span></div>
-      <div class="costo-row"><span>Stock bajo</span><span class="td-mono">${k.stockBajo}</span></div>
+      <div class="costo-row"><span>Sin stock</span><span class="td-mono">${k.stockSinStock ?? 0}</span></div>
+      <div class="costo-row"><span>Stock bajo</span><span class="td-mono">${k.stockBajo ?? 0}</span></div>
     </div>
   `;
 }
