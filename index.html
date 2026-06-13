@@ -178,7 +178,7 @@ body{
 .kpi-card.oliva::before{background:var(--oliva)}
 .kpi-card:hover{box-shadow:0 4px 20px var(--shadow-m);transform:translateY(-1px)}
 .kpi-label{font-size:11px;color:var(--text-s);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;font-family:'DM Mono',monospace}
-.kpi-value{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--marron);line-height:1}
+.kpi-value{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--marron);line-height:1;word-break:break-word;overflow-wrap:break-word}
 .kpi-sub{font-size:11px;color:var(--text-s);margin-top:4px}
 
 .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--gap)}
@@ -479,27 +479,36 @@ select{cursor:pointer}
     margin-bottom:14px;
   }
   .kpi-card{
-    padding:14px 14px 12px;
+    padding:14px 12px 12px;
     border-radius:14px;
     box-shadow:0 2px 8px rgba(0,0,0,.07);
     position:relative;
     overflow:hidden;
+    min-width:0; /* necesario para que no desborde el grid */
   }
   .kpi-card::before{
     height:3px;
     border-radius:0;
   }
   .kpi-label{
-    font-size:10px;
+    font-size:9px;
     letter-spacing:.6px;
-    margin-bottom:6px;
+    margin-bottom:5px;
     opacity:.65;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .kpi-value{
-    font-size:20px;
+    font-size:18px;
     font-weight:400;
-    line-height:1.1;
+    line-height:1.15;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:100%;
   }
+  .kpi-sub{font-size:10px;margin-top:3px}
 
   /* ── GRIDS ─────────────────────────────────────────────── */
   .grid-2,.grid-3,.grid-auto{grid-template-columns:1fr;gap:12px}
@@ -605,6 +614,26 @@ select{cursor:pointer}
   .empty-state{padding:48px 20px}
   .empty-state .icon{font-size:40px;margin-bottom:10px}
   .empty-state p{font-size:13px}
+
+  /* ── COSTEO ────────────────────────────────────────────── */
+  /* En mobile la grid-2 ya apila a 1 col — pero refinamos el formulario */
+  #page-costeo .panel-header{margin-bottom:10px}
+  /* Comprimimos los campos de porcentajes en 2 columnas */
+  #page-costeo .form-grid{grid-template-columns:1fr 1fr;gap:10px}
+  /* Salvo los full que siguen siendo full */
+  #page-costeo .form-group.full{grid-column:1/-1}
+  /* El info del lote de cuero: texto más chico */
+  #costeo-lote-info{font-size:11px!important;padding:10px!important}
+  /* Botones de acción al final */
+  #page-costeo [style*="display:flex;gap:8px"]{flex-direction:column}
+  #page-costeo .btn{width:100%}
+  /* Resultado: compactar las filas */
+  #costeo-resultado .costo-row{
+    font-size:13px;
+    padding:6px 0;
+  }
+  /* Sección insumos de receta */
+  #insumos-receta .costo-row{flex-wrap:wrap;gap:6px}
 
   /* ── OCULTAR SIDEBAR ───────────────────────────────────── */
   #nav{display:none}
