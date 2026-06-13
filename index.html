@@ -278,19 +278,23 @@ tr:hover td{background:var(--beige)}
 /* ─── BOTONES ────────────────────────────────────────────── */
 .btn{
   display:inline-flex;align-items:center;gap:6px;
-  padding:8px 18px;border-radius:var(--r);font-size:13px;
-  font-weight:500;cursor:pointer;border:none;transition:.2s;
+  padding:9px 18px;border-radius:var(--r);font-size:13px;
+  font-weight:500;cursor:pointer;border:none;
+  transition:transform .15s ease,box-shadow .2s ease,background .2s ease,filter .2s ease;
   text-decoration:none;white-space:nowrap;
 }
-.btn-primary{background:var(--tierra);color:#fff}
-.btn-primary:hover{background:var(--tierra-d)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:linear-gradient(135deg,var(--tierra),var(--tierra-d));color:#fff;box-shadow:0 2px 8px -2px var(--shadow-l)}
+.btn-primary:hover{filter:brightness(1.06);box-shadow:0 6px 16px -4px var(--shadow-l);transform:translateY(-1px)}
 .btn-secondary{background:var(--beige-d);color:var(--text)}
 .btn-secondary:hover{background:var(--arena)}
-.btn-success{background:var(--success);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{background:var(--beige)}
-.btn-sm{padding:5px 12px;font-size:12px}
+.btn-success{background:linear-gradient(135deg,var(--success-l),var(--success));color:#fff;box-shadow:0 2px 8px -2px var(--shadow-l)}
+.btn-success:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(135deg,var(--danger-l),var(--danger));color:#fff;box-shadow:0 2px 8px -2px var(--shadow-l)}
+.btn-danger:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--beige);border-color:var(--tierra-l)}
+.btn-sm{padding:6px 13px;font-size:12px}
 .btn-icon{padding:8px;width:36px;height:36px;justify-content:center}
 
 /* ─── FORMULARIOS ────────────────────────────────────────── */
@@ -299,14 +303,22 @@ tr:hover td{background:var(--beige)}
 .form-group.full{grid-column:1/-1}
 label{font-size:12px;font-weight:500;color:var(--text-m);letter-spacing:.3px}
 input,select,textarea{
-  padding:9px 12px;border:1px solid var(--border);
+  padding:10px 12px;border:1px solid var(--border);
   border-radius:var(--r);font-size:13px;color:var(--text);
-  background:var(--card);outline:none;transition:.2s;
+  background:var(--card);outline:none;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
   font-family:'DM Sans',sans-serif;
 }
-input:focus,select:focus,textarea:focus{border-color:var(--tierra);box-shadow:0 0 0 3px rgba(139,111,82,.1)}
+input:hover,select:hover,textarea:hover{border-color:var(--tierra-l)}
+input:focus,select:focus,textarea:focus{border-color:var(--tierra);box-shadow:0 0 0 3px var(--gold-soft);background:#fff}
+input::placeholder,textarea::placeholder{color:var(--text-s)}
 textarea{resize:vertical;min-height:80px}
-select{cursor:pointer}
+select{
+  cursor:pointer;appearance:none;-webkit-appearance:none;
+  padding-right:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%236B5240' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
 .form-help{font-size:11px;color:var(--text-s)}
 
 /* ─── BUSCADOR ───────────────────────────────────────────── */
@@ -314,7 +326,9 @@ select{cursor:pointer}
   display:flex;align-items:center;gap:8px;
   background:var(--beige);border:1px solid var(--border);
   border-radius:var(--r);padding:0 12px;
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
 }
+.search-box:focus-within{border-color:var(--tierra);box-shadow:0 0 0 3px var(--gold-soft);background:#fff}
 .search-box input{
   border:none;background:transparent;padding:9px 0;flex:1;
 }
@@ -328,8 +342,10 @@ select{cursor:pointer}
   border:1px solid var(--border);cursor:pointer;
   background:var(--card);color:var(--text-m);transition:.2s;
 }
-.filter-chip:hover,.filter-chip.active{
-  background:var(--tierra);color:#fff;border-color:var(--tierra);
+.filter-chip:hover{border-color:var(--tierra-l);color:var(--text)}
+.filter-chip.active{
+  background:linear-gradient(135deg,var(--tierra),var(--tierra-d));color:#fff;border-color:transparent;
+  box-shadow:0 2px 8px -2px var(--shadow-l);
 }
 
 /* ─── MODAL ──────────────────────────────────────────────── */
@@ -340,32 +356,41 @@ select{cursor:pointer}
 }
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{
-  background:var(--card);border-radius:var(--r-l);
+  background:var(--card);border-radius:var(--r-xl);
   max-width:680px;width:100%;max-height:90vh;overflow-y:auto;
-  transform:scale(.96);transition:.2s;
-  box-shadow:0 20px 60px rgba(0,0,0,.25);
+  transform:scale(.96) translateY(8px);
+  transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease;
+  box-shadow:0 30px 80px -20px rgba(44,31,20,.5),0 0 0 1px var(--gold-soft);
 }
-.modal-overlay.open .modal{transform:scale(1)}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
 .modal-header{
-  padding:24px 24px 16px;
+  padding:22px 24px 16px;
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;background:var(--card);z-index:1;
+  position:sticky;top:0;background:var(--premium-panel);z-index:1;
 }
 .modal-title{
   font-family:'Cormorant Garamond',serif;
-  font-size:20px;font-weight:400;color:var(--marron);
+  font-size:21px;font-weight:400;color:var(--marron);letter-spacing:.3px;
+  display:flex;align-items:center;gap:10px;
+}
+.modal-title::before{
+  content:'';width:3px;height:18px;border-radius:2px;
+  background:linear-gradient(180deg,var(--gold),var(--cuero));flex-shrink:0;
 }
 .modal-body{padding:24px}
 .modal-footer{
   padding:16px 24px;border-top:1px solid var(--border);
   display:flex;justify-content:flex-end;gap:8px;
-  position:sticky;bottom:0;background:var(--card);
+  position:sticky;bottom:0;background:var(--premium-panel);
 }
 .btn-close{
   background:none;border:none;font-size:20px;cursor:pointer;
-  color:var(--text-s);padding:4px;line-height:1;
+  color:var(--text-s);padding:4px;line-height:1;width:30px;height:30px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  transition:background .15s ease,color .15s ease;
 }
+.btn-close:hover{background:var(--beige-d);color:var(--danger)}
 
 /* ─── TOAST ──────────────────────────────────────────────── */
 #toast-container{
