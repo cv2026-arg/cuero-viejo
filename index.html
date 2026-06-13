@@ -418,7 +418,7 @@ select{cursor:pointer}
 .costo-row .val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--marron)}
 .costo-separator{border:none;border-top:1px solid var(--border);margin:4px 0}
 .costo-total{font-size:15px;font-weight:600}
-.costo-bar{height:4px;border-radius:2px;background:var(--tierra-l);margin-top:2px}
+.costo-bar{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--cuero-l),var(--tierra));margin-top:2px}
 
 /* ─── TABS ───────────────────────────────────────────────── */
 .tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
@@ -436,7 +436,7 @@ select{cursor:pointer}
 
 /* ─── PROGRESS ───────────────────────────────────────────── */
 .progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;background:var(--tierra-l);border-radius:3px;transition:width .4s}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cuero-l),var(--tierra));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 
 /* ─── AVATAR ─────────────────────────────────────────────── */
 .avatar{
@@ -2026,7 +2026,7 @@ function pwaDismiss() {
     </div>
 
     <!-- Rentabilidad -->
-    <div class="panel">
+    <div class="panel premium">
       <div class="panel-header">
         <span class="panel-title">Rentabilidad del canal</span>
       </div>
@@ -2035,7 +2035,7 @@ function pwaDismiss() {
   </div>
 
   <!-- Historial mensual -->
-<div class="panel" style="margin-bottom:20px">
+<div class="panel premium" style="margin-bottom:20px">
   <div class="panel-header">
     <span class="panel-title">Rendimiento mensual</span>
     <button class="btn btn-outline btn-sm" onclick="toggleHistorialShowroom()">Ver historial</button>
@@ -3659,7 +3659,7 @@ document.getElementById('stock-summary').innerHTML = topClientas.length
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="flex:1;height:4px;background:var(--beige-d);border-radius:2px;overflow:hidden">
-            <div style="height:100%;width:${(c.total/maxMonto*100).toFixed(1)}%;background:var(--tierra-l);border-radius:2px"></div>
+            <div style="height:100%;width:${(c.total/maxMonto*100).toFixed(1)}%;background:linear-gradient(90deg,var(--cuero-l),var(--tierra));border-radius:2px"></div>
           </div>
           <span style="font-size:11px;color:var(--text-s);font-family:'DM Mono',monospace">${c.cantidad} compra${c.cantidad !== 1 ? 's' : ''}</span>
         </div>
