@@ -4915,33 +4915,40 @@ async function loadCompras() {
   const [r0, r1] = await Promise.allSettled([api('getCompras'), api('getInsumos')]);
   state.compras = (r0.status === 'fulfilled' ? r0.value : null) || [];
   state.insumos = (r1.status === 'fulfilled' ? r1.value : null) || [];
-  const sel = document.getElementById('c-insumo');
-  sel.innerHTML = '<option value="">Seleccionar...</option>' + state.insumos.map(i =>
-    `<option value="${i.id_insumo}" data-unit="${i.unidad}" data-cat="${i.categoria}">${i.nombre_insumo} (${i.unidad})</option>`
-  ).join('');
 
-  const opcionesInsumos = state.insumos.map(i => ({
-    value: i.id_insumo,
-    label: i.nombre_insumo || '',
-    sub:   (i.categoria || '') + (i.unidad ? ' · ' + i.unidad : '')
-  }));
-  makeSearchable('c-insumo', opcionesInsumos, {
-    placeholder: 'Buscar insumo...',
-    onSelect: () => autoFillCompra()
-  });
-  document.getElementById('compras-body').innerHTML = state.compras.map(c => `
-    <tr>
-      <td class="td-mono">${c.id_compra}</td>
-      <td>${fmtDate(c.fecha)}</td>
-      <td>${c.nombre_insumo}</td>
-      <td class="td-mono">${c.cantidad_comprada} ${c.unidad}</td>
-      <td class="td-mono" style="font-weight:600">${fmt(c.costo_total_compra)}</td>
-      <td class="td-mono">${c.costo_unitario_compra ? fmt(c.costo_unitario_compra) : '—'}</td>
-      <td>${c.proveedor || '—'}</td>
-      <td><span class="cap-tag">${c.capsula_asociada || '—'}</span></td>
-      <td>${c.metodo_pago || '—'}</td>
-    </tr>
-  `).join('');
+  const sel = document.getElementById('c-insumo');
+  if (sel) {
+    sel.innerHTML = '<option value="">Seleccionar...</option>' + state.insumos.map(i =>
+      `<option value="${i.id_insumo||''}" data-unit="${i.unidad||''}" data-cat="${i.categoria||''}">${i.nombre_insumo||'?'} (${i.unidad||''})</option>`
+    ).join('');
+    const opcionesInsumos = state.insumos.map(i => ({
+      value: i.id_insumo || '',
+      label: i.nombre_insumo || '',
+      sub:   (i.categoria || '') + (i.unidad ? ' · ' + i.unidad : '')
+    }));
+    makeSearchable('c-insumo', opcionesInsumos, {
+      placeholder: 'Buscar insumo...',
+      onSelect: () => autoFillCompra()
+    });
+  }
+
+  const tbody = document.getElementById('compras-body');
+  if (tbody) {
+    tbody.innerHTML = state.compras.length
+      ? state.compras.map(c => `
+          <tr>
+            <td class="td-mono">${c.id_compra || '—'}</td>
+            <td>${fmtDate(c.fecha)}</td>
+            <td>${c.nombre_insumo || '—'}</td>
+            <td class="td-mono">${c.cantidad_comprada || 0} ${c.unidad || ''}</td>
+            <td class="td-mono" style="font-weight:600">${fmt(c.costo_total_compra)}</td>
+            <td class="td-mono">${c.costo_unitario_compra ? fmt(c.costo_unitario_compra) : '—'}</td>
+            <td>${c.proveedor || '—'}</td>
+            <td><span class="cap-tag">${c.capsula_asociada || '—'}</span></td>
+            <td>${c.metodo_pago || '—'}</td>
+          </tr>`).join('')
+      : '<tr><td colspan="9" style="text-align:center;color:var(--text-s);padding:40px">Sin compras registradas</td></tr>';
+  }
 
   populateGlobalSelects();
 }
