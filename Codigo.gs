@@ -8,7 +8,7 @@ var SS = SpreadsheetApp.getActiveSpreadsheet();
 function doGet(e) {
   // Modo API: si viene ?action=... devuelve JSON con CORS
   if (e && e.parameter && e.parameter.action) {
-    var result = callAction(e.parameter.action, e.parameter.payload || '{}');
+    var result = callAction(e.parameter.action, e.parameter.payload || '{}', e.parameter.token || '');
     return ContentService
       .createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -25,24 +25,81 @@ function doGet(e) {
 function doPost(e) {
   var action  = e && e.parameter && e.parameter.action  ? e.parameter.action  : '';
   var payload = e && e.parameter && e.parameter.payload ? e.parameter.payload : '{}';
+  var token   = e && e.parameter && e.parameter.token   ? e.parameter.token   : '';
   if (!action) {
     return ContentService
       .createTextOutput(JSON.stringify({ ok: false, error: 'Falta el parámetro action' }))
       .setMimeType(ContentService.MimeType.JSON);
   }
-  var result = callAction(action, payload);
+  var result = callAction(action, payload, token);
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ─── AUTENTICACIÓN ─────────────────────────────────────────
+// Acciones que NO requieren token (login y health-check)
+var PUBLIC_ACTIONS = ['ping', 'login'];
+
+function _prop(key) {
+  return PropertiesService.getScriptProperties().getProperty(key);
+}
+
+// Firma HMAC-SHA256 del dato con el secreto guardado en Script Properties
+function _sign(data) {
+  var secret = _prop('AUTH_SECRET');
+  if (!secret) throw new Error('Falta configurar AUTH_SECRET en Script Properties.');
+  var raw = Utilities.computeHmacSha256Signature(String(data), secret);
+  return Utilities.base64EncodeWebSafe(raw);
+}
+
+// Genera un token con vencimiento (stateless: no se guarda en ningún lado)
+function _makeToken() {
+  var TTL_DIAS = 30;
+  var exp = Date.now() + TTL_DIAS * 24 * 60 * 60 * 1000;
+  return exp + '.' + _sign(exp);
+}
+
+// Valida un token: formato correcto, no vencido y firma válida
+function _validateToken(token) {
+  if (!token) return false;
+  var parts = String(token).split('.');
+  if (parts.length !== 2) return false;
+  var exp = parts[0];
+  if (!/^\d+$/.test(exp)) return false;
+  if (Number(exp) < Date.now()) return false;       // vencido
+  return _sign(exp) === parts[1];                    // firma válida
+}
+
+// Login: compara la contraseña con la guardada en Script Properties
+function _login(payload) {
+  var pass = (payload && payload.password != null) ? String(payload.password) : '';
+  var real = _prop('APP_PASSWORD');
+  if (!real) throw new Error('Falta configurar APP_PASSWORD en Script Properties.');
+  if (pass !== real) throw new Error('Contraseña incorrecta');
+  return { token: _makeToken() };
+}
+
 // ─── callAction: entry point desde google.script.run ───────
-function callAction(action, payloadJson) {
+function callAction(action, payloadJson, token) {
   try {
     var payload = {};
     if (payloadJson) {
       try { payload = JSON.parse(payloadJson); } catch(e) { payload = {}; }
     }
+
+    // Login: acción especial, no requiere token previo
+    if (action === 'login') {
+      return { ok: true, data: _login(payload) };
+    }
+
+    // El resto de las acciones (salvo las públicas) requieren token válido
+    if (PUBLIC_ACTIONS.indexOf(action) === -1) {
+      if (!_validateToken(token)) {
+        return { ok: false, error: 'AUTH_REQUIRED' };
+      }
+    }
+
     var result = runAction(action, payload);
     return { ok: true, data: result };
   } catch(e) {

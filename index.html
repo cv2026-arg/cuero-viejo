@@ -392,6 +392,42 @@ select{
 }
 .btn-close:hover{background:var(--beige-d);color:var(--danger)}
 
+/* ─── LOGIN ──────────────────────────────────────────────── */
+#login-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:var(--premium-dark);
+}
+#login-overlay .login-card{
+  width:100%;max-width:360px;
+  background:var(--premium-panel);
+  border:1px solid var(--gold-soft);
+  border-radius:var(--r-xl);padding:36px 28px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.6);
+  text-align:center;
+}
+#login-overlay .login-brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:30px;font-weight:300;letter-spacing:4px;
+  color:var(--marron);text-transform:uppercase;
+}
+#login-overlay .login-sub{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;
+  color:var(--text-s);text-transform:uppercase;margin-top:4px;margin-bottom:26px;
+}
+#login-overlay .login-msg{
+  background:#FFF3DC;color:var(--warning);
+  font-size:12px;padding:8px 12px;border-radius:var(--r);margin-bottom:16px;
+}
+#login-overlay form{display:flex;flex-direction:column;gap:12px}
+#login-overlay input{
+  text-align:center;font-size:15px;padding:13px;border-radius:var(--r);
+}
+#login-overlay .btn{justify-content:center;padding:13px}
+#login-overlay .login-error{
+  color:var(--danger);font-size:12px;min-height:16px;margin-top:2px;
+}
+
 /* ─── TOAST ──────────────────────────────────────────────── */
 #toast-container{
   position:fixed;bottom:24px;right:24px;
@@ -1201,7 +1237,10 @@ function pwaDismiss() {
       <span class="icon">◈</span> Config
     </div>
   </div>
-  <div id="sidebar-footer">v2.0 · 2026</div>
+  <div id="sidebar-footer">
+    <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;padding:0;margin-bottom:6px;display:flex;align-items:center;gap:6px;text-transform:uppercase">⎋ Cerrar sesión</button>
+    <div>v2.0 · 2026</div>
+  </div>
 </nav>
 
 <!-- MAIN -->
@@ -2165,6 +2204,9 @@ function pwaDismiss() {
     <button class="drawer-item" data-page="config" onclick="drawerNav('config')">
       <span class="di-icon">◈</span>Config
     </button>
+    <button class="drawer-item" onclick="closeMoreDrawer();logout()">
+      <span class="di-icon">⎋</span>Salir
+    </button>
   </div>
 </div>
 </div><!-- /app -->
@@ -3045,6 +3087,79 @@ const WRITE_INVALIDATIONS = {
 };
 
 // ─── API (fetch → Apps Script) ────────────────────────────────
+// ─── AUTENTICACIÓN (cliente) ──────────────────────────────────
+const CV_TOKEN_KEY = 'cv_auth_token';
+function getToken()  { try { return localStorage.getItem(CV_TOKEN_KEY) || ''; } catch(e) { return ''; } }
+function setToken(t) { try { localStorage.setItem(CV_TOKEN_KEY, t); } catch(e) {} }
+function clearToken(){ try { localStorage.removeItem(CV_TOKEN_KEY); } catch(e) {} }
+
+function logout() {
+  clearToken();
+  // Limpiar datos cacheados para que nadie los vea sin loguear
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(CV_CACHE_PREFIX))
+      .forEach(k => localStorage.removeItem(k));
+  } catch(e) {}
+  location.reload();
+}
+
+// Pide la contraseña al backend y guarda el token devuelto
+function doLogin(password) {
+  const params = new URLSearchParams({ action: 'login', payload: JSON.stringify({ password }) });
+  return fetch(`${SCRIPT_URL}?${params}`, { redirect: 'follow' })
+    .then(r => r.json())
+    .then(result => {
+      if (!result || !result.ok || !result.data || !result.data.token) {
+        throw new Error((result && result.error) || 'No se pudo iniciar sesión');
+      }
+      setToken(result.data.token);
+      return true;
+    });
+}
+
+// Pantalla de login (overlay a pantalla completa)
+function showLogin(expired = false) {
+  if (document.getElementById('login-overlay')) return;
+  document.getElementById('app-loader')?.classList.add('hidden');
+  const ov = document.createElement('div');
+  ov.id = 'login-overlay';
+  ov.innerHTML = `
+    <div class="login-card">
+      <div class="login-brand">CUERO VIEJO</div>
+      <div class="login-sub">Gestión interna</div>
+      ${expired ? '<div class="login-msg">Tu sesión expiró. Ingresá de nuevo.</div>' : ''}
+      <form id="login-form" autocomplete="off">
+        <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password" />
+        <button type="submit" class="btn btn-primary" id="login-btn">Ingresar</button>
+        <div id="login-error" class="login-error"></div>
+      </form>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const form = document.getElementById('login-form');
+  const err  = document.getElementById('login-error');
+  const btn  = document.getElementById('login-btn');
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const pass = document.getElementById('login-pass').value;
+    if (!pass) return;
+    btn.disabled = true; btn.textContent = 'Ingresando...'; err.textContent = '';
+    try {
+      await doLogin(pass);
+      ov.remove();
+      document.getElementById('app-loader')?.classList.remove('hidden');
+      init();
+    } catch(e) {
+      err.textContent = e.message || 'Error al ingresar';
+      btn.disabled = false; btn.textContent = 'Ingresar';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+  });
+  setTimeout(() => document.getElementById('login-pass')?.focus(), 100);
+}
+
 function api(action, payload = {}) {
   // Modo legacy: si corre dentro de Apps Script, usar google.script.run
   if (typeof google !== 'undefined' && google.script && google.script.run && !SCRIPT_URL) {
@@ -3088,7 +3203,7 @@ function api(action, payload = {}) {
 }
 
 function _fetchFromAPI(action, payload = {}) {
-  const params = new URLSearchParams({ action, payload: JSON.stringify(payload) });
+  const params = new URLSearchParams({ action, payload: JSON.stringify(payload), token: getToken() });
   const isRead = CACHEABLE.includes(action) && Object.keys(payload).length === 0;
 
   return fetch(`${SCRIPT_URL}?${params}`, { redirect: 'follow' })
@@ -3099,6 +3214,12 @@ function _fetchFromAPI(action, payload = {}) {
     .then(result => {
       if (!result || !result.ok) {
         const msg = (result && result.error) ? result.error : 'Error desconocido';
+        // Sesión vencida o sin permiso → forzar login
+        if (msg === 'AUTH_REQUIRED') {
+          clearToken();
+          showLogin(true);
+          throw new Error('Sesión expirada');
+        }
         console.error('API error:', action, msg);
         throw new Error(msg);
       }
@@ -3153,6 +3274,12 @@ async function init() {
           4. Copiá la URL y pegala en <code>const SCRIPT_URL = '...'</code>
         </div>
       </div>`;
+    return;
+  }
+
+  // ── Gate de autenticación: sin token → pantalla de login ──
+  if (tieneURL && !getToken()) {
+    showLogin(false);
     return;
   }
 
