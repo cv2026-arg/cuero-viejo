@@ -3060,31 +3060,69 @@ const CACHEABLE = ['getConfig','getCapsulas','getCategorias','getUnidades','getT
   'getShowroomHistorial','getProductosConVariantes','getSocios'];
 
 // Qué cache limpiar después de cada escritura
+// Mapa derivado de las dependencias REALES backend (qué hoja lee cada vista):
+//   VENTAS         -> getVentas, getDashboard, getKPIs, getFinanzas, getShowroomKPIs, getShowroomHistorial
+//   EGRESOS        -> getEgresos, getDashboard, getKPIs, getFinanzas
+//   STOCK_PRODUCTOS-> getStock, getDashboard, getKPIs
+//   ACTIVOS        -> getActivos, getDashboard, getKPIs
+//   MOVIMIENTOS    -> getMovimientos
+//   SHOWROOM_MOV   -> getShowroom, getShowroomKPIs, getShowroomHistorial
+//   PRODUCTOS_MAE  -> getProductos, getProductosConVariantes, getShowroom
+//   COSTOS_FIJOS   -> getCostosFijos, getShowroomKPIs, getShowroomHistorial
+//   INSUMOS        -> getInsumos | COMPRAS -> getCompras | CUEROS -> getLotesCuero
+//   VIAJES -> getViajes | PRODUCCION -> getProduccion, getProduccionAgrupada
+//   STOCK_VARIANTES-> getVariantes, getProductosConVariantes
+// OJO: compras / lotes de cuero / viajes / costos fijos AUTO-GENERAN un egreso.
 const WRITE_INVALIDATIONS = {
-  registrarVenta:               ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
-  registrarVentaConTalle:       ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
-  eliminarVenta:                ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
-  crearProducto:                ['getProductos','getStock','getDashboard','getProductosConVariantes'],
-  editarProducto:               ['getProductos','getStock','getDashboard','getProductosConVariantes'],
-  crearInsumo:                  ['getInsumos','getStock'],
-  registrarCompra:              ['getCompras','getInsumos','getStock'],
-  crearLoteCuero:               ['getLotesCuero'],
-  registrarEgreso:              ['getEgresos','getDashboard','getFinanzas','getMovimientos'],
-  registrarViaje:               ['getViajes','getEgresos','getDashboard'],
-  crearActivo:                  ['getActivos'],
-  registrarCostoFijo:           ['getCostosFijos','getDashboard'],
-  eliminarCostoFijo:            ['getCostosFijos','getDashboard'],
-  registrarProduccion:          ['getProduccion','getProduccionAgrupada','getStock'],
-  registrarProduccionConTalles: ['getProduccion','getProduccionAgrupada','getStock'],
-  editarProduccion:             ['getProduccion','getProduccionAgrupada'],
+  // ── Ventas (VENTAS + stock; si es showroom, mov. showroom) ──
+  registrarVenta:               ['getVentas','getDashboard','getKPIs','getFinanzas','getStock','getShowroom','getShowroomKPIs','getShowroomHistorial'],
+  registrarVentaConTalle:       ['getVentas','getDashboard','getKPIs','getFinanzas','getStock','getVariantes','getProductosConVariantes','getShowroom','getShowroomKPIs','getShowroomHistorial'],
+  eliminarVenta:                ['getVentas','getDashboard','getKPIs','getFinanzas','getStock','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
+
+  // ── Productos (maestro + stock + variantes) ──
+  crearProducto:                ['getProductos','getProductosConVariantes','getVariantes','getStock','getDashboard','getKPIs','getShowroom'],
+  editarProducto:               ['getProductos','getProductosConVariantes','getStock','getDashboard','getKPIs','getShowroom'],
+
+  // ── Insumos / Compras (compra = insumo + egreso + mov. stock) ──
+  crearInsumo:                  ['getInsumos'],
+  registrarCompra:              ['getCompras','getInsumos','getMovimientos','getEgresos','getDashboard','getKPIs','getFinanzas'],
+
+  // ── Cuero (lote = egreso) ──
+  crearLoteCuero:               ['getLotesCuero','getEgresos','getDashboard','getKPIs','getFinanzas'],
+
+  // ── Egresos ──
+  registrarEgreso:              ['getEgresos','getDashboard','getKPIs','getFinanzas'],
+
+  // ── Viajes (viaje = egreso por nafta) ──
+  registrarViaje:               ['getViajes','getEgresos','getDashboard','getKPIs','getFinanzas'],
+
+  // ── Activos (amortización entra en dashboard/KPIs) ──
+  crearActivo:                  ['getActivos','getDashboard','getKPIs'],
+
+  // ── Costos fijos (= egreso; también afecta KPIs de showroom) ──
+  registrarCostoFijo:           ['getCostosFijos','getEgresos','getDashboard','getKPIs','getFinanzas','getShowroomKPIs','getShowroomHistorial'],
+  eliminarCostoFijo:            ['getCostosFijos','getEgresos','getDashboard','getKPIs','getFinanzas','getShowroomKPIs','getShowroomHistorial'],
+
+  // ── Producción (genera stock + consume insumos) ──
+  registrarProduccion:          ['getProduccion','getProduccionAgrupada','getStock','getDashboard','getKPIs','getInsumos'],
+  registrarProduccionConTalles: ['getProduccion','getProduccionAgrupada','getStock','getDashboard','getKPIs','getVariantes','getProductosConVariantes'],
+  editarProduccion:             ['getProduccion','getProduccionAgrupada','getStock','getDashboard','getKPIs','getMovimientos'],
+
+  // ── Tareas / Sets / Cotizaciones ──
   crearTarea:                   ['getTareas'],
   actualizarTarea:              ['getTareas'],
   crearSet:                     ['getSets'],
   guardarCotizacion:            ['getCotizaciones'],
-  crearCapsula:                 ['getCapsulas'],
-  eliminarCapsula:              ['getCapsulas'],
-  eliminarCapsulaCompleta:      ['getCapsulas'],
-  actualizarConfig:             ['getConfig'],
+
+  // ── Cápsulas (el dashboard agrupa ventas por cápsula) ──
+  crearCapsula:                 ['getCapsulas','getDashboard'],
+  eliminarCapsula:              ['getCapsulas','getDashboard'],
+  eliminarCapsulaCompleta:      ['getCapsulas','getDashboard','getKPIs','getFinanzas','getStock','getVentas'],
+
+  // ── Config (parámetros del negocio: pueden afectar cálculos) ──
+  actualizarConfig:             ['getConfig','getDashboard','getKPIs','getFinanzas'],
+
+  // ── Movimientos showroom manuales ──
   registrarMovimientoShowroom:  ['getShowroom','getShowroomKPIs','getShowroomHistorial'],
 };
 
