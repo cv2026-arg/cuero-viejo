@@ -3061,9 +3061,9 @@ const CACHEABLE = ['getConfig','getCapsulas','getCategorias','getUnidades','getT
 
 // Qué cache limpiar después de cada escritura
 const WRITE_INVALIDATIONS = {
-  registrarVenta:               ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
-  registrarVentaConTalle:       ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
-  eliminarVenta:                ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos'],
+  registrarVenta:               ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
+  registrarVentaConTalle:       ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
+  eliminarVenta:                ['getVentas','getDashboard','getStock','getKPIs','getFinanzas','getMovimientos','getShowroom','getShowroomKPIs','getShowroomHistorial'],
   crearProducto:                ['getProductos','getStock','getDashboard','getProductosConVariantes'],
   editarProducto:               ['getProductos','getStock','getDashboard','getProductosConVariantes'],
   crearInsumo:                  ['getInsumos','getStock'],

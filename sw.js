@@ -1,6 +1,6 @@
 // ── Cuero Viejo Service Worker ───────────────────────────────
-const CACHE_NAME  = 'cuero-viejo-v10';
-const DATA_CACHE  = 'cuero-viejo-data-v10';
+const CACHE_NAME  = 'cuero-viejo-v11';
+const DATA_CACHE  = 'cuero-viejo-data-v11';
 
 // Recursos de la shell de la app (se cachean en la instalación)
 const SHELL_URLS = [
