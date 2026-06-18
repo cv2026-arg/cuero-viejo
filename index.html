@@ -355,15 +355,20 @@ select{
   position:fixed;inset:0;background:rgba(44,31,20,.55);
   z-index:200;display:flex;align-items:center;justify-content:center;
   padding:20px;opacity:0;pointer-events:none;transition:.2s;
+  overscroll-behavior:contain;
 }
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{
   background:var(--card);border-radius:var(--r-xl);
   max-width:680px;width:100%;max-height:90vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   transform:scale(.96) translateY(8px);
   transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease;
   box-shadow:0 30px 80px -20px rgba(44,31,20,.5),0 0 0 1px var(--gold-soft);
 }
+/* bloquear el scroll del fondo cuando hay un modal abierto */
+body.modal-open{overflow:hidden;touch-action:none}
+body.modal-open .modal-overlay.open{touch-action:auto}
 .modal-overlay.open .modal{transform:scale(1) translateY(0)}
 .modal-header{
   padding:22px 24px 16px;
@@ -3260,11 +3265,13 @@ function _fetchFromAPI(action, payload = {}) {
     .then(result => {
       if (!result || !result.ok) {
         const msg = (result && result.error) ? result.error : 'Error desconocido';
-        // Sesión vencida o sin permiso → forzar login
+        // Sesión vencida o sin permiso → forzar login (sin cartel rojo)
         if (msg === 'AUTH_REQUIRED') {
           clearToken();
           showLogin(true);
-          throw new Error('Sesión expirada');
+          const authErr = new Error('Sesión expirada');
+          authErr.__auth = true;
+          throw authErr;
         }
         console.error('API error:', action, msg);
         throw new Error(msg);
@@ -3283,6 +3290,8 @@ function _fetchFromAPI(action, payload = {}) {
       return result.data;
     })
     .catch(err => {
+      // Error de auth: ya se mostró la pantalla de login, no molestar con toast
+      if (err && err.__auth) throw err;
       // Si falla la red, intentar devolver cache aunque esté vencido
       if (isRead) {
         try {
@@ -6402,6 +6411,7 @@ function showModal(id) {
     });
 
     m.classList.add('open');
+    document.body.classList.add('modal-open');
     return;
   }
 
@@ -6420,12 +6430,17 @@ function showModal(id) {
   }
 
   modal.classList.add('open');
+  document.body.classList.add('modal-open');
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (!modal) return;
   modal.classList.remove('open');
+  // Desbloquear el fondo solo si no quedan otros modales abiertos
+  if (!document.querySelector('.modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
 
   // Limpiar todos los campos del modal
   modal.querySelectorAll('input:not([type="hidden"])').forEach(el => {
